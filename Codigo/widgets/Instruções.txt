@@ -1,0 +1,3 @@
+Todo elemento que for repetido entre as telas, deverá ser criado aqui, e qualquer modificação necessária, poderá ser feito uma sobrecarga dentro da classe.
+
+Exemplo: modal.dart (Widget), home_view (View). Se home_view precisa do modal modificado, é feito uma sobrecarga dentro da view.
