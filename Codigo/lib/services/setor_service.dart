@@ -1,9 +1,8 @@
-import 'package:sqflite/sqflite.dart'; 
-import '/models/setor_model.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:patrimonio_mobile/models/setor_model.dart';
 import 'database_helper.dart';
 
 class SetorService {
-  
   final _dbHelper = DatabaseHelper.instance;
 
   Future<int> insertSetor(Setor setor) async {
