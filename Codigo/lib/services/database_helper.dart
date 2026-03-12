@@ -65,4 +65,27 @@ class DatabaseHelper {
     ''');
   }
 
+  Future<int> insertPatrimonio(Map<String, dynamic> row) async {
+    Database db = await instance.database;
+    return await db.insert('PatrimonioInventariado', row);
+  }
+
+  Future<List<Map<String, dynamic>>> getPatrimoniosPorSetor(int idSetor, int idInventario) async {
+    Database db = await instance.database;
+    return await db.query(
+      'PatrimonioInventariado',
+      where: 'idSetor = ? AND idInventario = ?',
+      whereArgs: [idSetor, idInventario],
+    );
+  }
+
+  Future<int> deletePatrimonio(int id) async {
+    Database db = await instance.database;
+    return await db.delete(
+      'PatrimonioInventariado',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+  }
 }
