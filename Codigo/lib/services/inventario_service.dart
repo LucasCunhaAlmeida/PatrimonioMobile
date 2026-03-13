@@ -33,4 +33,23 @@ class InventarioService {
 
     return maps.map(Inventario.fromMap).toList();
   }
+
+  Future<int> updateInventario(Inventario inventario) async {
+    final Database db = await _dbHelper.database;
+    return db.update(
+      'Inventario',
+      inventario.toMap(),
+      where: 'id = ?',
+      whereArgs: [inventario.id],
+    );
+  }
+
+  Future<int> deleteInventario(int id) async {
+    final Database db = await _dbHelper.database;
+    return db.delete(
+      'Inventario',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }
