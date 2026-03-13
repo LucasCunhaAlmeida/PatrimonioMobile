@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:patrimonio_mobile/views/instituicao_view.dart';
 import 'package:patrimonio_mobile/views/scanner_view.dart';
 
-import 'services/database_factory_init.dart';
-
 void main() async {
   // Garante que os widgets do Flutter estejam inicializados antes de abrir o banco
   WidgetsFlutterBinding.ensureInitialized();
-
-  initDatabaseFactory();
+  // Garante que os widgets do Flutter estejam inicializados antes de abrir o banco
+  WidgetsFlutterBinding.ensureInitialized();
 
   runApp(const MyApp());
 }
