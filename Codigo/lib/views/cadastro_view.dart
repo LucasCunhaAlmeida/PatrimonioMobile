@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '/widgets/custom_navbar.dart'; 
+import 'package:patrimonio_mobile/views/cadastro_inventario_view.dart';
+import 'package:patrimonio_mobile/views/setor_view.dart';
+import '/widgets/custom_navbar.dart';
 
 class CadastroView extends StatefulWidget {
   const CadastroView({super.key});
@@ -10,7 +12,7 @@ class CadastroView extends StatefulWidget {
 }
 
 class _CadastroViewState extends State<CadastroView> {
-  final scaffoldKey = GlobalKey<ScaffoldState>(); 
+  final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,7 @@ class _CadastroViewState extends State<CadastroView> {
         backgroundColor: const Color(0xFFF1F4F8),
         body: Column(
           mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.stretch, 
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
               child: Column(
@@ -34,34 +36,34 @@ class _CadastroViewState extends State<CadastroView> {
                     width: double.infinity,
                     height: 130,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFEFF0F6), 
+                      color: Color(0xFFEFF0F6),
                     ),
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(20, 40, 20, 20),
+                      padding:
+                          const EdgeInsetsDirectional.fromSTEB(20, 40, 20, 20),
                       child: Row(
-                        mainAxisSize: MainAxisSize.max, 
+                        mainAxisSize: MainAxisSize.max,
                         children: [
                           Text(
                             'Escolha o que deseja cadastrar',
                             textAlign: TextAlign.start,
-                            style: GoogleFonts.interTight( 
-                              fontSize: 18, 
-                              fontWeight: FontWeight.w600, 
-                              color: const Color(0xFF57636C), 
+                            style: GoogleFonts.interTight(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF57636C),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-
                   Expanded(
                     child: Container(
-                      width: double.infinity, 
+                      width: double.infinity,
                       decoration: const BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30), 
+                          topLeft: Radius.circular(30),
                           topRight: Radius.circular(30),
                         ),
                       ),
@@ -72,30 +74,37 @@ class _CadastroViewState extends State<CadastroView> {
                             mainAxisSize: MainAxisSize.max,
                             children: [
                               const SizedBox(height: 20),
-                            
                               _buildOptionCard(
                                 icon: Icons.foundation,
-                                title: 'Instituição', 
+                                title: 'Instituição',
                                 onTap: () => print('Cadastrar Instituição'),
                               ),
-                              
                               const SizedBox(height: 20),
-                              
                               _buildOptionCard(
-                                icon: Icons.store, 
-                                title: 'Setor', 
-                                onTap: () => print('Cadastrar Setor'), 
+                                icon: Icons.store,
+                                title: 'Setor',
+                                onTap: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const SetorView(),
+                                        ));
+                                  },    
                               ),
-                              
-                              const SizedBox(height: 20), 
-                              
+                              const SizedBox(height: 20),
                               _buildOptionCard(
-                                icon: Icons.inventory_sharp,
-                                title: 'Inventário',
-                                onTap: () => print('Cadastrar Inventário'),
-                              ),
-                              
-                              const SizedBox(height: 20), 
+                                  icon: Icons.inventory_sharp,
+                                  title: 'Inventário',
+                                  onTap: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const CadastrarInventarioPage(),
+                                        ));
+                                  }),
+                              const SizedBox(height: 20),
                             ],
                           ),
                         ),
@@ -105,7 +114,7 @@ class _CadastroViewState extends State<CadastroView> {
                 ],
               ),
             ),
-            const NavBarWidget(),
+            const NavBarWidget(selectedIndex: 1),
           ],
         ),
       ),
@@ -113,26 +122,25 @@ class _CadastroViewState extends State<CadastroView> {
   }
 
   // Widget auxiliar para os cards de seleção
-  Widget _buildOptionCard({
-    required IconData icon, 
-    required String title, 
-    required VoidCallback onTap
-  }) {
+  Widget _buildOptionCard(
+      {required IconData icon,
+      required String title,
+      required VoidCallback onTap}) {
     return Container(
-      width: double.infinity, 
-      height: 70, 
+      width: double.infinity,
+      height: 70,
       decoration: BoxDecoration(
-        color: Colors.white, 
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            blurRadius: 5, 
+            blurRadius: 5,
             color: Colors.black.withOpacity(0.1),
-            offset: const Offset(0, 2), 
+            offset: const Offset(0, 2),
           )
         ],
         borderRadius: BorderRadius.circular(20),
       ),
-      child: InkWell( 
+      child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
@@ -141,24 +149,24 @@ class _CadastroViewState extends State<CadastroView> {
             mainAxisSize: MainAxisSize.max,
             children: [
               Icon(
-                icon, 
-                color: const Color(0xFF0055FF), 
-                size: 40, 
+                icon,
+                color: const Color(0xFF0055FF),
+                size: 40,
               ),
               const SizedBox(width: 15),
               Expanded(
                 child: Text(
-                  title, 
+                  title,
                   style: GoogleFonts.interTight(
-                    fontSize: 18, 
+                    fontSize: 18,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF57636C), 
+                    color: const Color(0xFF57636C),
                   ),
                 ),
               ),
               const Icon(
-                Icons.arrow_forward_ios, 
-                color: Color(0xFF57636C), 
+                Icons.arrow_forward_ios,
+                color: Color(0xFF57636C),
                 size: 20,
               ),
             ],

@@ -149,7 +149,7 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
                 ],
               ),
             ),
-            const NavBarWidget(),
+            const NavBarWidget(selectedIndex: 1),
           ],
         ),
       ),

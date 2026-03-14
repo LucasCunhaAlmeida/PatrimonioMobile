@@ -91,7 +91,7 @@ class _ArquivosViewState extends State<ArquivosView> {
                 ),
               ),
             ),
-            const NavBarWidget(),
+            const NavBarWidget(selectedIndex: 2),
           ],
         ),
       ),
