@@ -37,9 +37,11 @@ class InstituicaoService {
 
   Future<int> updateInstituicao(int id, Instituicao instituicao) async {
     Database db = await _dbHelper.database;
+    final Map<String, dynamic> data = Map<String, dynamic>.from(instituicao.toMap());
+    data.remove(_idColumn);
     return await db.update(
       _table,
-      instituicao.toMap(),
+      data,
       where: '$_idColumn = ?',
       whereArgs: [id],
     );
