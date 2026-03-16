@@ -1,24 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../widgets/custom_navbar.dart'; 
+import 'package:patrimonio_mobile/models/instituicao_model.dart';
+import 'package:patrimonio_mobile/models/inventario_model.dart';
+import 'package:patrimonio_mobile/services/instituicao_service.dart';
+import 'package:patrimonio_mobile/services/inventario_service.dart';
+import 'package:patrimonio_mobile/widgets/custom_navbar.dart';
 
 class CadastrarInventarioPage extends StatefulWidget {
   const CadastrarInventarioPage({super.key});
 
   @override
-  State<CadastrarInventarioPage> createState() => _CadastrarInventarioPageState();
+  State<CadastrarInventarioPage> createState() =>
+      _CadastrarInventarioPageState();
 }
 
 class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  
+
+  final _inventarioService = InventarioService();
+  final _instituicaoService = InstituicaoService();
   final _nomeInventarioController = TextEditingController();
-  String? _instituicaoSelecionada;
+  int? _instituicaoSelecionadaId;
   DateTime? _dataInicio;
   DateTime? _dataFim;
 
-  final List<String> _instituicoes = ['Instituição A', 'Instituição B', 'Instituição C'];
+  List<Instituicao> _instituicoes = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInstituicoes();
+  }
 
   @override
   void dispose() {
@@ -26,19 +40,91 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
     super.dispose();
   }
 
-  Future<void> _selecionarData(BuildContext context, bool isInicio) async {
+  Future<void> _loadInstituicoes() async {
+    setState(() => _loading = true);
+
+    final instituicoes = await _instituicaoService.queryAllInstituicoes();
+
+    if (!mounted) return;
+    setState(() {
+      _instituicoes = instituicoes;
+
+      if (_instituicoes.isNotEmpty) {
+        _instituicaoSelecionadaId ??= _instituicoes.first.id;
+      }
+
+      _loading = false;
+    });
+  }
+
+  Future<void> _selecionarData(bool isInicio) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: isInicio
+          ? (_dataInicio ?? DateTime.now())
+          : (_dataFim ?? _dataInicio ?? DateTime.now()),
       firstDate: DateTime(2025),
       lastDate: DateTime(2030),
     );
     if (picked != null) {
       setState(() {
-        if (isInicio) _dataInicio = picked;
-        else _dataFim = picked;
+        if (isInicio) {
+          _dataInicio = picked;
+        } else {
+          _dataFim = picked;
+        }
       });
     }
+  }
+
+  Future<void> _salvarInventario() async {
+    if (_instituicaoSelecionadaId == null ||
+        _nomeInventarioController.text.trim().isEmpty ||
+        _dataInicio == null ||
+        _dataFim == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha os campos obrigatórios')),
+      );
+      return;
+    }
+
+    final novoInventario = Inventario(
+      nome: _nomeInventarioController.text.trim(),
+      dataInicio: DateFormat('yyyy-MM-dd').format(_dataInicio!),
+      dataFim: DateFormat('yyyy-MM-dd').format(_dataFim!),
+      idInstituicao: _instituicaoSelecionadaId!,
+    );
+
+    await _inventarioService.insertInventario(novoInventario);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Inventário cadastrado com sucesso')),
+    );
+
+    Navigator.pop(context);
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFE0E3E7)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFE0E3E7)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF0055FF)),
+      ),
+    );
   }
 
   @override
@@ -51,88 +137,147 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
         body: Column(
           children: [
             Container(
-              height: 130,
+              height: 120,
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
               color: const Color(0xFFEFF0F6),
-              padding: const EdgeInsets.only(top: 40, left: 20, right: 20),
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, size: 30, color: Color(0xFF57636C)),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xFF57636C),
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const SizedBox(width: 10),
-                  Text('Cadastrar Inventário', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Cadastrar Inventario',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF57636C),
+                    ),
+                  ),
                 ],
               ),
             ),
-
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-                ),
                 padding: const EdgeInsets.all(20),
-                child: ListView(
-                  children: [
-                    const Text('Instituição', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    DropdownButtonFormField<String>(
-                      initialValue: _instituicaoSelecionada,
-                      decoration: const InputDecoration(hintText: 'Selecione a instituição'),
-                      items: _instituicoes.map((inst) => DropdownMenuItem(value: inst, child: Text(inst))).toList(),
-                      onChanged: (val) => setState(() => _instituicaoSelecionada = val),
-                      validator: (value) => value == null ? 'Por favor, selecione uma instituição' : null,
-                    ),
-
-                    const SizedBox(height: 20),
-                    const Text('Nome do Inventário', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    TextFormField(
-                      controller: _nomeInventarioController,
-                      decoration: const InputDecoration(hintText: 'Ex: Inventário Anual 2026'),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => _selecionarData(context, true),
-                            child: InputDecorator(
-                              decoration: const InputDecoration(labelText: 'Data Início'),
-                              child: Text(_dataInicio == null ? 'Selecione' : DateFormat('dd/MM/yyyy').format(_dataInicio!)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => _selecionarData(context, false),
-                            child: InputDecorator(
-                              decoration: const InputDecoration(labelText: 'Data Fim'),
-                              child: Text(_dataFim == null ? 'Selecione' : DateFormat('dd/MM/yyyy').format(_dataFim!)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_instituicaoSelecionada != null && _nomeInventarioController.text.isNotEmpty) {
-                          print('Salvo: ${_nomeInventarioController.text} para ${_instituicaoSelecionada}');
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preencha os campos obrigatórios')));
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0055FF)),
-                      child: const Text('Salvar Inventário', style: TextStyle(color: Colors.white)),
-                    ),
-                  ],
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F4F8),
                 ),
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView(
+                        children: [
+                          Text(
+                            'Instituicao',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF57636C),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<int>(
+                            initialValue: _instituicaoSelecionadaId,
+                            decoration:
+                                _inputDecoration('Selecione a instituição'),
+                            items: _instituicoes
+                                .map(
+                                  (inst) => DropdownMenuItem(
+                                    value: inst.id,
+                                    child: Text(inst.nome),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) =>
+                                setState(() => _instituicaoSelecionadaId = val),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Nome do Inventario',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF57636C),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _nomeInventarioController,
+                            decoration:
+                                _inputDecoration('Digite o nome do inventário'),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => _selecionarData(true),
+                                  child: InputDecorator(
+                                    decoration:
+                                        _inputDecoration('Data de início'),
+                                    child: Text(
+                                      _dataInicio == null
+                                          ? 'Selecione'
+                                          : DateFormat('dd/MM/yyyy')
+                                              .format(_dataInicio!),
+                                      style: GoogleFonts.inter(
+                                        color: const Color(0xFF57636C),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => _selecionarData(false),
+                                  child: InputDecorator(
+                                    decoration: _inputDecoration('Data de fim'),
+                                    child: Text(
+                                      _dataFim == null
+                                          ? 'Selecione'
+                                          : DateFormat('dd/MM/yyyy')
+                                              .format(_dataFim!),
+                                      style: GoogleFonts.inter(
+                                        color: const Color(0xFF57636C),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _salvarInventario,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0055FF),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: const Text(
+                                'Salvar Inventario',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ),
             const NavBarWidget(selectedIndex: 1),

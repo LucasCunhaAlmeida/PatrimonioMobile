@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:patrimonio_mobile/views/inventario_view.dart';
+import 'package:patrimonio_mobile/models/instituicao_model.dart';
+import 'package:patrimonio_mobile/models/inventario_model.dart';
+import 'package:patrimonio_mobile/services/instituicao_service.dart';
+import 'package:patrimonio_mobile/services/inventario_service.dart';
+import 'package:patrimonio_mobile/views/detalhes_inventario_view.dart';
 import '/widgets/custom_navbar.dart';
 
 class HomeView extends StatefulWidget {
@@ -11,8 +15,64 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  String? dropDownValue;
+  final _instituicaoService = InstituicaoService();
+  final _inventarioService = InventarioService();
+
+  List<Instituicao> _instituicoes = [];
+  List<Inventario> _inventarios = [];
+  int? _instituicaoSelecionadaId;
+  bool _loadingInstituicoes = true;
+  bool _loadingInventarios = false;
+
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInstituicoes();
+  }
+
+  Future<void> _loadInstituicoes() async {
+    setState(() => _loadingInstituicoes = true);
+
+    final instituicoes = await _instituicaoService.queryAllInstituicoes();
+
+    setState(() {
+      _instituicoes = instituicoes;
+      _loadingInstituicoes = false;
+    });
+  }
+
+  Future<void> _onInstituicaoChanged(int? idInstituicao) async {
+    setState(() {
+      _instituicaoSelecionadaId = idInstituicao;
+      _inventarios = [];
+      _loadingInventarios = idInstituicao != null;
+    });
+
+    if (idInstituicao == null) {
+      return;
+    }
+
+    final inventarios = await _inventarioService.queryInventariosByInstituicao(
+      idInstituicao,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _inventarios = inventarios;
+      _loadingInventarios = false;
+    });
+  }
+
+  String _formatarData(String data) {
+    final partes = data.split('-');
+    if (partes.length == 3) {
+      return '${partes[2]}/${partes[1]}/${partes[0]}';
+    }
+    return data;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +116,8 @@ class _HomeViewState extends State<HomeView> {
                               ),
                             ),
                           ),
-                          DropdownButtonFormField<String>(
-                            initialValue: dropDownValue,
+                          DropdownButtonFormField<int>(
+                            initialValue: _instituicaoSelecionadaId,
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: Colors.white,
@@ -69,15 +129,16 @@ class _HomeViewState extends State<HomeView> {
                                     const BorderSide(color: Color(0x9A57636C)),
                               ),
                             ),
-                            hint: const Text('Departamento de sistemas de...'),
-                            items: ['Opção 1', 'Opção 2', 'Opção 3']
-                                .map((label) => DropdownMenuItem(
-                                      value: label,
-                                      child: Text(label),
+                            hint: const Text('Selecione a Instituição'),
+                            items: _instituicoes
+                                .map((inst) => DropdownMenuItem<int>(
+                                      value: inst.id,
+                                      child: Text(inst.nome),
                                     ))
                                 .toList(),
-                            onChanged: (val) =>
-                                setState(() => dropDownValue = val),
+                            onChanged: _loadingInstituicoes
+                                ? null
+                                : (val) => _onInstituicaoChanged(val),
                           ),
                         ],
                       ),
@@ -111,19 +172,54 @@ class _HomeViewState extends State<HomeView> {
                               ),
                             ),
                             Expanded(
-                              child: ListView(
-                                padding: EdgeInsets.zero,
-                                children: [
-                                  // Item da Lista (Card de Inventário)
-                                  _buildInventarioCard(
-                                    titulo: 'Inventário Anual 2026',
-                                    inicio: '01/01/2026',
-                                    fim: '01/12/2026',
-                                  ),
-                                  // Espaçador (Substituindo o .divide) [cite: 235]
-                                  const SizedBox(height: 15),
-                                ],
-                              ),
+                              child: _loadingInstituicoes || _loadingInventarios
+                                  ? const Center(
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : _instituicaoSelecionadaId == null
+                                      ? Center(
+                                          child: Text(
+                                            'Selecione a Instituição',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 15,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        )
+                                      : _inventarios.isEmpty
+                                          ? Center(
+                                              child: Text(
+                                                'Nenhum inventário encontrado para esta instituição.',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 15,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            )
+                                          : ListView.builder(
+                                              padding: EdgeInsets.zero,
+                                              itemCount: _inventarios.length,
+                                              itemBuilder: (context, index) {
+                                                final inventario =
+                                                    _inventarios[index];
+                                                return Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    bottom: 15,
+                                                  ),
+                                                  child: _buildInventarioCard(
+                                                    inventario: inventario,
+                                                    titulo: inventario.nome,
+                                                    inicio: _formatarData(
+                                                      inventario.dataInicio,
+                                                    ),
+                                                    fim: _formatarData(
+                                                      inventario.dataFim,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
                             ),
                           ],
                         ),
@@ -142,7 +238,10 @@ class _HomeViewState extends State<HomeView> {
 
   // Widget auxiliar para construir o card de inventário e manter o build principal limpo
   Widget _buildInventarioCard(
-      {required String titulo, required String inicio, required String fim}) {
+      {required Inventario inventario,
+      required String titulo,
+      required String inicio,
+      required String fim}) {
     return Container(
       width: 100,
       height: 80,
@@ -193,7 +292,8 @@ class _HomeViewState extends State<HomeView> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const InventarioView(),
+                  builder: (context) =>
+                      DetalhesInventarioView(inventario: inventario),
                 ),
               );
             },

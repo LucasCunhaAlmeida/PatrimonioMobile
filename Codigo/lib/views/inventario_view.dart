@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '/widgets/custom_navbar.dart'; 
+import 'package:intl/intl.dart';
+import 'package:patrimonio_mobile/models/instituicao_model.dart';
+import 'package:patrimonio_mobile/models/inventario_model.dart';
+import 'package:patrimonio_mobile/services/instituicao_service.dart';
+import 'package:patrimonio_mobile/services/inventario_service.dart';
+import 'package:patrimonio_mobile/views/cadastro_inventario_view.dart';
+import 'package:patrimonio_mobile/widgets/custom_navbar.dart';
 
 class InventarioView extends StatefulWidget {
   const InventarioView({super.key});
@@ -10,176 +16,347 @@ class InventarioView extends StatefulWidget {
 }
 
 class _InventarioViewState extends State<InventarioView> {
-  String? setorSelecionado;
-  final scaffoldKey = GlobalKey<ScaffoldState>();
+  final _inventarioService = InventarioService();
+  final _instituicaoService = InstituicaoService();
+
+  List<Inventario> _inventarios = [];
+  List<Instituicao> _instituicoes = [];
+  int? _instituicaoSelecionadaId;
+  bool _loading = true;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        FocusManager.instance.primaryFocus?.unfocus();
-      },
-      child: Scaffold(
-        key: scaffoldKey,
-        backgroundColor: const Color(0xFFF1F4F8),
-        body: Column(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 130,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEFF0F6), 
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(20, 40, 20, 20), 
-                      child: Row(
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          IconButton( 
-                            icon: const Icon(Icons.arrow_back, size: 40, color: Color(0xFF57636C)),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Inventário anual 2026',
-                                  style: GoogleFonts.interTight(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF57636C),
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    Text('Início: 01/01/2026', style: GoogleFonts.inter(fontSize: 12)), 
-                                    const Text(' | ', style: TextStyle(fontSize: 12)),
-                                    Text('Fim: 01/12/2026', style: GoogleFonts.inter(fontSize: 12)), 
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Setor',
-                              style: GoogleFonts.interTight(fontSize: 18, fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 10),
-                          
-                            DropdownButtonFormField<String>(
-                              initialValue: setorSelecionado,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Color(0x9A57636C)),
-                                ),
-                              ),
-                              hint: const Text('Lab 3'),
-                              items: ['Option 1', 'Option 2', 'Option 3']
-                                  .map((val) => DropdownMenuItem(value: val, child: Text(val)))
-                                  .toList(),
-                              onChanged: (val) => setState(() => setorSelecionado = val),
-                            ),
+  Future<void> _loadData() async {
+    setState(() => _loading = true);
 
-                            const SizedBox(height: 20),
-                            Text(
-                              'Patrimônios do setor',
-                              style: GoogleFonts.interTight(fontSize: 18, fontWeight: FontWeight.w600),
-                            ),
-                            
-                            Expanded(
-                              child: ListView(
-                                padding: const EdgeInsets.only(top: 10), 
-                                children: [
-                                  _buildPatrimonioItem(numero: '1', codigo: '987622'), 
-                                  const SizedBox(height: 10),
-                                ],
-                              ),
-                            ),
+    final instituicoes = await _instituicaoService.queryAllInstituicoes();
+    final inventarios = await _inventarioService.queryAllInventarios();
 
-                            Padding(
-                              padding: const EdgeInsets.only(top: 10),
-                              child: ElevatedButton.icon(
-                                onPressed: () => print('Abrir Câmera'),
-                                icon: const Icon(Icons.camera_alt, color: Colors.white),
-                                label: const Text('Adicionar patrimônio', style: TextStyle(color: Colors.white, fontSize: 18)),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0055FF), 
-                                  minimumSize: const Size(double.infinity, 50),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const NavBarWidget(), 
-          ],
+    if (!mounted)
+      return; // Verifica se o widget ainda está na árvore antes de chamar setState(usuário sair da tela antes de carregar os dados)
+    setState(() {
+      _instituicoes = instituicoes;
+      _inventarios = inventarios;
+
+      if (_instituicoes.isNotEmpty && _instituicaoSelecionadaId == null) {
+        _instituicaoSelecionadaId = _instituicoes.first.id;
+      }
+
+      _loading = false;
+    });
+  }
+
+  List<Inventario> get _filteredInventarios {
+    if (_instituicaoSelecionadaId == null) return _inventarios;
+
+    return _inventarios
+        .where((i) => i.idInstituicao == _instituicaoSelecionadaId)
+        .toList();
+  }
+
+  Future<void> _deleteInventario(int id) async {
+    await _inventarioService.deleteInventario(id);
+    await _loadData();
+  }
+
+  Future<void> _showDeleteDialog(Inventario inventario) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir inventario'),
+        content: Text(
+          'Tem certeza que deseja excluir o inventario "${inventario.nome}"?',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Excluir',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deleteInventario(inventario.id!);
+    }
+  }
+
+  Future<void> _showEditDialog(Inventario inventario) async {
+    final nomeController = TextEditingController(text: inventario.nome);
+    final dataInicioController =
+        TextEditingController(text: inventario.dataInicio);
+    final dataFimController = TextEditingController(text: inventario.dataFim);
+    int? selectedInstituicao = inventario.idInstituicao;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Editar inventario'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nomeController,
+                decoration:
+                    const InputDecoration(labelText: 'Nome do inventário'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dataInicioController,
+                readOnly: true,
+                decoration: const InputDecoration(
+                  labelText: 'Data inicio',
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                onTap: () async {
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2025),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null) {
+                    dataInicioController.text =
+                        DateFormat('yyyy-MM-dd').format(picked);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dataFimController,
+                readOnly: true,
+                decoration: const InputDecoration(
+                  labelText: 'Data fim',
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                onTap: () async {
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2025),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null) {
+                    dataFimController.text =
+                        DateFormat('yyyy-MM-dd').format(picked);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int>(
+                initialValue: _instituicoes.any(
+                  (inst) => inst.id == selectedInstituicao,
+                )
+                    ? selectedInstituicao
+                    : null,
+                decoration: const InputDecoration(labelText: 'Instituição'),
+                items: _instituicoes
+                    .map(
+                      (inst) => DropdownMenuItem(
+                        value: inst.id,
+                        child: Text(inst.nome),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) => selectedInstituicao = value,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nomeController.text.trim().isEmpty ||
+                  dataInicioController.text.trim().isEmpty ||
+                  dataFimController.text.trim().isEmpty ||
+                  selectedInstituicao == null) {
+                return;
+              }
+
+              await _inventarioService.updateInventario(
+                Inventario(
+                  id: inventario.id,
+                  nome: nomeController.text.trim(),
+                  dataInicio: dataInicioController.text.trim(),
+                  dataFim: dataFimController.text.trim(),
+                  idInstituicao: selectedInstituicao!,
+                ),
+              );
+
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              await _loadData();
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildPatrimonioItem({required String numero, required String codigo}) {
+  Widget _buildInventarioItem(Inventario inventario) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(blurRadius: 3, color: Colors.black.withOpacity(0.1), offset: const Offset(0, 2))
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          )
         ],
       ),
       child: Row(
         children: [
-          Text(numero, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w500)),
-          const SizedBox(width: 30), 
+          const SizedBox(width: 20),
           Expanded(
-            child: Text(codigo, style: GoogleFonts.inter(fontSize: 18)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  inventario.nome,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Inicio: ${inventario.dataInicio} | Fim: ${inventario.dataFim}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.cancel_outlined, color: Colors.red, size: 24),
-            onPressed: () => print('Remover item'),
+            icon: const Icon(Icons.edit, color: Color(0xFF0055FF)),
+            onPressed: () => _showEditDialog(inventario),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () => _showDeleteDialog(inventario),
           ),
         ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F8),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFEFF0F6),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF57636C)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Inventarios',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF57636C),
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Instituicao',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<int>(
+                  initialValue: _instituicaoSelecionadaId,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _instituicoes
+                      .map(
+                        (inst) => DropdownMenuItem(
+                          value: inst.id,
+                          child: Text(inst.nome),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _instituicaoSelecionadaId = val;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredInventarios.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Nenhum inventário cadastrado para esta instituição.',
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filteredInventarios.length,
+                        itemBuilder: (context, index) {
+                          final inventario = _filteredInventarios[index];
+                          return _buildInventarioItem(inventario);
+                        },
+                      ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: const NavBarWidget(selectedIndex: 1),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CadastrarInventarioPage(),
+            ),
+          );
+          await _loadData();
+        },
+        backgroundColor: const Color(0xFF0055FF),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
       ),
     );
   }

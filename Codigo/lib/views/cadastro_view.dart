@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:patrimonio_mobile/views/cadastro_inventario_view.dart';
-import 'package:patrimonio_mobile/views/instituicao_view.dart';
+import 'package:patrimonio_mobile/views/inventario_view.dart';
 import 'package:patrimonio_mobile/views/setor_view.dart';
 import '/widgets/custom_navbar.dart';
 
@@ -93,13 +93,12 @@ class _CadastroViewState extends State<CadastroView> {
                                 icon: Icons.store,
                                 title: 'Setor',
                                 onTap: () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const SetorView(),
-                                        ));
-                                  },    
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const SetorView(),
+                                      ));
+                                },
                               ),
                               const SizedBox(height: 20),
                               _buildOptionCard(
@@ -110,7 +109,7 @@ class _CadastroViewState extends State<CadastroView> {
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
-                                              const CadastrarInventarioPage(),
+                                              const InventarioView(),
                                         ));
                                   }),
                               const SizedBox(height: 20),
