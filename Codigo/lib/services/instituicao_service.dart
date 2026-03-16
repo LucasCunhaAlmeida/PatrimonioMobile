@@ -1,5 +1,5 @@
 import 'package:sqflite/sqflite.dart';
-import '/models/instituicao_model.dart';
+import 'package:patrimonio_mobile/models/instituicao_model.dart';
 import 'database_helper.dart';
 
 class InstituicaoService {
