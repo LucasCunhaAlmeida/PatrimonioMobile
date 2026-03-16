@@ -1,17 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:patrimonio_mobile/models/inventario_model.dart';
+import 'package:patrimonio_mobile/models/PatrimonioInventariado_model.dart';
+import 'package:patrimonio_mobile/models/setor_model.dart';
+import 'package:patrimonio_mobile/services/PatrimonioInventariado_service.dart';
+import 'package:patrimonio_mobile/services/setor_service.dart';
+import 'package:patrimonio_mobile/views/scanner_view.dart';
 import '/widgets/custom_navbar.dart';
 
 class DetalhesInventarioView extends StatefulWidget {
-  const DetalhesInventarioView({super.key});
+  final Inventario inventario;
+  const DetalhesInventarioView({super.key, required this.inventario});
 
   @override
   State<DetalhesInventarioView> createState() => _DetalhesInventarioViewState();
 }
 
 class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
-  String? setorSelecionado;
+  final _setorService = SetorService();
+  final _patrimonioService = PatrimonioinventariadoService();
+
+  List<Setor> _setores = [];
+  List<PatrimonioInventariado> _patrimonios = [];
+  int? _setorSelecionadoId;
+  bool _loadingSetores = true;
+  bool _loadingPatrimonios = false;
+
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSetores();
+  }
+
+  Future<void> _loadSetores() async {
+    setState(() => _loadingSetores = true);
+    final todos = await _setorService.queryAllSetores();
+    setState(() {
+      _setores = todos
+          .where((s) => s.idInstituicao == widget.inventario.idInstituicao)
+          .toList();
+      _loadingSetores = false;
+    });
+  }
+
+  Future<void> _onSetorChanged(int? idSetor) async {
+    setState(() {
+      _setorSelecionadoId = idSetor;
+      _patrimonios = [];
+      _loadingPatrimonios = idSetor != null;
+    });
+    if (idSetor == null) return;
+    await _loadPatrimonios(idSetor);
+  }
+
+  Future<void> _loadPatrimonios(int idSetor) async {
+    setState(() => _loadingPatrimonios = true);
+    final lista = await _patrimonioService.listarPatrimonio(
+        idSetor, widget.inventario.id!);
+    if (!mounted) return;
+    setState(() {
+      _patrimonios = lista;
+      _loadingPatrimonios = false;
+    });
+  }
+
+  String _formatarData(String data) {
+    final partes = data.split('-');
+    if (partes.length == 3) return '${partes[2]}/${partes[1]}/${partes[0]}';
+    return data;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +93,7 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                   Container(
                     width: double.infinity,
                     height: 130,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEFF0F6),
-                    ),
+                    decoration: const BoxDecoration(color: Color(0xFFEFF0F6)),
                     child: Padding(
                       padding:
                           const EdgeInsetsDirectional.fromSTEB(20, 40, 20, 20),
@@ -55,21 +112,27 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Inventário anual 2026',
+                                  widget.inventario.nome,
                                   style: GoogleFonts.interTight(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
                                     color: const Color(0xFF57636C),
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 Row(
                                   children: [
-                                    Text('Início: 01/01/2026',
-                                        style: GoogleFonts.inter(fontSize: 12)),
+                                    Text(
+                                      'Início: ${_formatarData(widget.inventario.dataInicio)}',
+                                      style: GoogleFonts.inter(fontSize: 12),
+                                    ),
                                     const Text(' | ',
                                         style: TextStyle(fontSize: 12)),
-                                    Text('Fim: 01/12/2026',
-                                        style: GoogleFonts.inter(fontSize: 12)),
+                                    Text(
+                                      'Fim: ${_formatarData(widget.inventario.dataFim)}',
+                                      style: GoogleFonts.inter(fontSize: 12),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -100,47 +163,62 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                   fontSize: 18, fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 10),
-                            DropdownButtonFormField<String>(
-                              value: setorSelecionado,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                contentPadding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                      color: Color(0x9A57636C)),
-                                ),
-                              ),
-                              hint: const Text('Lab 3'),
-                              items: ['Option 1', 'Option 2', 'Option 3']
-                                  .map((val) => DropdownMenuItem(
-                                      value: val, child: Text(val)))
-                                  .toList(),
-                              onChanged: (val) =>
-                                  setState(() => setorSelecionado = val),
-                            ),
+                            _loadingSetores
+                                ? const Center(
+                                    child: CircularProgressIndicator())
+                                : DropdownButtonFormField<int>(
+                                    value: _setorSelecionadoId,
+                                    decoration: InputDecoration(
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 12),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                            color: Color(0x9A57636C)),
+                                      ),
+                                    ),
+                                    hint: const Text('Selecione o Setor'),
+                                    items: _setores
+                                        .map((s) => DropdownMenuItem(
+                                              value: s.id,
+                                              child: Text(s.nome),
+                                            ))
+                                        .toList(),
+                                    onChanged: _onSetorChanged,
+                                  ),
                             const SizedBox(height: 20),
                             Text(
                               'Patrimônios do setor',
                               style: GoogleFonts.interTight(
                                   fontSize: 18, fontWeight: FontWeight.w600),
                             ),
-                            Expanded(
-                              child: ListView(
-                                padding: const EdgeInsets.only(top: 10),
-                                children: [
-                                  _buildPatrimonioItem(
-                                      numero: '1', codigo: '987622'),
-                                  const SizedBox(height: 10),
-                                ],
-                              ),
-                            ),
+                            const SizedBox(height: 10),
+                            Expanded(child: _buildPatrimonioList()),
                             Padding(
                               padding: const EdgeInsets.only(top: 10),
                               child: ElevatedButton.icon(
-                                onPressed: () => print('Abrir Câmera'),
+                                onPressed: _setorSelecionadoId == null
+                                    ? null
+                                    : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ScannerView(
+                                              idInventario:
+                                                  widget.inventario.id!,
+                                              idSetor: _setorSelecionadoId!,
+                                            ),
+                                          ),
+                                        ).then((_) {
+                                          if (_setorSelecionadoId != null) {
+                                            _loadPatrimonios(
+                                                _setorSelecionadoId!);
+                                          }
+                                        });
+                                      },
                                 icon: const Icon(Icons.camera_alt,
                                     color: Colors.white),
                                 label: const Text('Adicionar patrimônio',
@@ -151,6 +229,7 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                   minimumSize: const Size(double.infinity, 50),
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12)),
+                                  disabledBackgroundColor: Colors.grey,
                                 ),
                               ),
                             ),
@@ -169,8 +248,37 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
     );
   }
 
-  Widget _buildPatrimonioItem(
-      {required String numero, required String codigo}) {
+  Widget _buildPatrimonioList() {
+    if (_setorSelecionadoId == null) {
+      return Center(
+        child: Text(
+          'Selecione um setor para ver os patrimônios',
+          style: GoogleFonts.inter(color: const Color(0xFF57636C)),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    if (_loadingPatrimonios) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_patrimonios.isEmpty) {
+      return Center(
+        child: Text(
+          'Nenhum patrimônio cadastrado neste setor',
+          style: GoogleFonts.inter(color: const Color(0xFF57636C)),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: EdgeInsets.zero,
+      itemCount: _patrimonios.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (_, i) => _buildPatrimonioItem(_patrimonios[i]),
+    );
+  }
+
+  Widget _buildPatrimonioItem(PatrimonioInventariado p) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       decoration: BoxDecoration(
@@ -178,24 +286,25 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              blurRadius: 3,
-              color: Colors.black.withOpacity(0.1),
-              offset: const Offset(0, 2))
+            blurRadius: 3,
+            color: Colors.black.withOpacity(0.1),
+            offset: const Offset(0, 2),
+          )
         ],
       ),
       child: Row(
         children: [
-          Text(numero,
-              style:
-                  GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w500)),
-          const SizedBox(width: 30),
           Expanded(
-            child: Text(codigo, style: GoogleFonts.inter(fontSize: 18)),
+            child: Text(
+              p.numero,
+              style:
+                  GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
           ),
           IconButton(
             icon:
                 const Icon(Icons.cancel_outlined, color: Colors.red, size: 24),
-            onPressed: () => print('Remover item'),
+            onPressed: () => print('Remover patrimônio ${p.numero}'),
           ),
         ],
       ),

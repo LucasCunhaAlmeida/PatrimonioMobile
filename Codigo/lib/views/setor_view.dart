@@ -5,6 +5,7 @@ import 'package:patrimonio_mobile/models/setor_model.dart';
 import 'package:patrimonio_mobile/services/instituicao_service.dart';
 import 'package:patrimonio_mobile/services/setor_service.dart';
 import 'package:patrimonio_mobile/views/cadastro_setor_view.dart';
+import 'package:patrimonio_mobile/widgets/custom_navbar.dart';
 
 class SetorView extends StatefulWidget {
   const SetorView({super.key});
@@ -64,7 +65,8 @@ class _SetorViewState extends State<SetorView> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Excluir setor'),
-        content: Text('Tem certeza que deseja excluir o setor "${setor.nome}"?'),
+        content:
+            Text('Tem certeza que deseja excluir o setor "${setor.nome}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -162,13 +164,6 @@ class _SetorViewState extends State<SetorView> {
       ),
       child: Row(
         children: [
-          Text(
-            '${setor.id}',
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black54,
-            ),
-          ),
           const SizedBox(width: 20),
           Expanded(
             child: Text(
@@ -268,6 +263,7 @@ class _SetorViewState extends State<SetorView> {
           ),
         ],
       ),
+      bottomNavigationBar: const NavBarWidget(selectedIndex: 1),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push(
