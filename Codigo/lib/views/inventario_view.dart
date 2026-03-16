@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:patrimonio_mobile/models/instituicao_model.dart';
 import 'package:patrimonio_mobile/models/inventario_model.dart';
 import 'package:patrimonio_mobile/services/instituicao_service.dart';
@@ -35,6 +36,8 @@ class _InventarioViewState extends State<InventarioView> {
     final instituicoes = await _instituicaoService.queryAllInstituicoes();
     final inventarios = await _inventarioService.queryAllInventarios();
 
+    if (!mounted)
+      return; // Verifica se o widget ainda está na árvore antes de chamar setState(usuário sair da tela antes de carregar os dados)
     setState(() {
       _instituicoes = instituicoes;
       _inventarios = inventarios;
@@ -107,7 +110,7 @@ class _InventarioViewState extends State<InventarioView> {
               TextField(
                 controller: nomeController,
                 decoration:
-                    const InputDecoration(labelText: 'Nome do inventario'),
+                    const InputDecoration(labelText: 'Nome do inventário'),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -126,7 +129,7 @@ class _InventarioViewState extends State<InventarioView> {
                   );
                   if (picked != null) {
                     dataInicioController.text =
-                        '${picked.day}/${picked.month}/${picked.year}';
+                        DateFormat('yyyy-MM-dd').format(picked);
                   }
                 },
               ),
@@ -147,14 +150,18 @@ class _InventarioViewState extends State<InventarioView> {
                   );
                   if (picked != null) {
                     dataFimController.text =
-                        '${picked.day}/${picked.month}/${picked.year}';
+                        DateFormat('yyyy-MM-dd').format(picked);
                   }
                 },
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                initialValue: selectedInstituicao,
-                decoration: const InputDecoration(labelText: 'Instituicao'),
+                initialValue: _instituicoes.any(
+                  (inst) => inst.id == selectedInstituicao,
+                )
+                    ? selectedInstituicao
+                    : null,
+                decoration: const InputDecoration(labelText: 'Instituição'),
                 items: _instituicoes
                     .map(
                       (inst) => DropdownMenuItem(
@@ -320,7 +327,7 @@ class _InventarioViewState extends State<InventarioView> {
                 : _filteredInventarios.isEmpty
                     ? const Center(
                         child: Text(
-                          'Nenhum inventario cadastrado para esta instituicao.',
+                          'Nenhum inventário cadastrado para esta instituição.',
                         ),
                       )
                     : ListView.builder(

@@ -37,6 +37,9 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
   Future<void> _loadSetores() async {
     setState(() => _loadingSetores = true);
     final todos = await _setorService.queryAllSetores();
+
+    if (!mounted) return;
+
     setState(() {
       _setores = todos
           .where((s) => s.idInstituicao == widget.inventario.idInstituicao)
@@ -213,6 +216,8 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                             ),
                                           ),
                                         ).then((_) {
+                                          if (!mounted) return;
+
                                           if (_setorSelecionadoId != null) {
                                             _loadPatrimonios(
                                                 _setorSelecionadoId!);

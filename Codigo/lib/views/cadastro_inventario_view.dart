@@ -45,6 +45,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
 
     final instituicoes = await _instituicaoService.queryAllInstituicoes();
 
+    if (!mounted) return;
     setState(() {
       _instituicoes = instituicoes;
 
@@ -82,7 +83,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
         _dataInicio == null ||
         _dataFim == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha os campos obrigatorios')),
+        const SnackBar(content: Text('Preencha os campos obrigatórios')),
       );
       return;
     }
@@ -99,7 +100,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Inventario cadastrado com sucesso')),
+      const SnackBar(content: Text('Inventário cadastrado com sucesso')),
     );
 
     Navigator.pop(context);
@@ -184,7 +185,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
                           DropdownButtonFormField<int>(
                             initialValue: _instituicaoSelecionadaId,
                             decoration:
-                                _inputDecoration('Selecione a instituicao'),
+                                _inputDecoration('Selecione a instituição'),
                             items: _instituicoes
                                 .map(
                                   (inst) => DropdownMenuItem(
@@ -209,7 +210,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
                           TextFormField(
                             controller: _nomeInventarioController,
                             decoration:
-                                _inputDecoration('Digite o nome do inventario'),
+                                _inputDecoration('Digite o nome do inventário'),
                           ),
                           const SizedBox(height: 20),
                           Row(
@@ -219,7 +220,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
                                   onTap: () => _selecionarData(true),
                                   child: InputDecorator(
                                     decoration:
-                                        _inputDecoration('Data de inicio'),
+                                        _inputDecoration('Data de início'),
                                     child: Text(
                                       _dataInicio == null
                                           ? 'Selecione'

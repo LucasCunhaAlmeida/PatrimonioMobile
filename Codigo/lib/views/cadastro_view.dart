@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:patrimonio_mobile/views/cadastro_inventario_view.dart';
 import 'package:patrimonio_mobile/views/inventario_view.dart';
 import 'package:patrimonio_mobile/views/setor_view.dart';
 import '/widgets/custom_navbar.dart';
