@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+<<<<<<< HEAD
 import 'package:patrimonio_mobile/models/instituicao_model.dart';
 import 'package:patrimonio_mobile/services/instituicao_service.dart';
+=======
+import '/models/instituicao_model.dart';
+import '/services/instituicao_service.dart';
+>>>>>>> 169dadfc364fcccc5d2aef6e4bdd2d12d0e77a55
 import '/widgets/custom_navbar.dart';
 
 class CadastroInstituicaoView extends StatefulWidget {
@@ -17,12 +22,17 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
   late TextEditingController _textController;
   late FocusNode _textFieldFocusNode;
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  final InstituicaoService _instituicaoService = InstituicaoService();
+
+  List<Instituicao> _instituicoes = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController();
     _textFieldFocusNode = FocusNode();
+    _carregarInstituicoes();
   }
 
   Future<void> _salvarInstituicao() async {
@@ -52,6 +62,58 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
     _textController.dispose();
     _textFieldFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _carregarInstituicoes() async {
+    setState(() => _isLoading = true);
+    try {
+      final instituicoes = await _instituicaoService.queryAllInstituicoes();
+      if (!mounted) return;
+      setState(() {
+        _instituicoes = instituicoes;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar instituições: $e')),
+      );
+    }
+  }
+
+  Future<void> _adicionarInstituicao() async {
+    final nome = _textController.text.trim();
+    if (nome.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Digite o nome da instituição.')),
+      );
+      return;
+    }
+
+    try {
+      await _instituicaoService.insertInstituicao(Instituicao(nome: nome));
+      _textController.clear();
+      _textFieldFocusNode.unfocus();
+      await _carregarInstituicoes();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao adicionar instituição: $e')),
+      );
+    }
+  }
+
+  Future<void> _removerInstituicao(int id) async {
+    try {
+      await _instituicaoService.deleteInstituicao(id);
+      await _carregarInstituicoes();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao remover instituição: $e')),
+      );
+    }
   }
 
   @override
@@ -123,12 +185,50 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
                                 color: const Color(0xFF57636C),
                               ),
                             ),
+<<<<<<< HEAD
                             const SizedBox(height: 16),
+=======
+                            Expanded(
+                              child: _isLoading
+                                  ? const Center(
+                                      child: CircularProgressIndicator())
+                                  : _instituicoes.isEmpty
+                                      ? Center(
+                                          child: Text(
+                                            'Nenhuma instituição cadastrada.',
+                                            style:
+                                                GoogleFonts.inter(fontSize: 16),
+                                          ),
+                                        )
+                                      : ListView.separated(
+                                          padding:
+                                              const EdgeInsets.only(top: 10),
+                                          itemCount: _instituicoes.length,
+                                          separatorBuilder: (_, __) =>
+                                              const SizedBox(height: 10),
+                                          itemBuilder: (context, index) {
+                                            final instituicao =
+                                                _instituicoes[index];
+                                            return _buildInstituicaoItem(
+                                              id: (index + 1).toString(),
+                                              nome: instituicao.nome,
+                                              onRemover: instituicao.id == null
+                                                  ? null
+                                                  : () => _removerInstituicao(
+                                                      instituicao.id!),
+                                            );
+                                          },
+                                        ),
+                            ),
+>>>>>>> 169dadfc364fcccc5d2aef6e4bdd2d12d0e77a55
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               child: TextFormField(
                                 controller: _textController,
                                 focusNode: _textFieldFocusNode,
+                                textInputAction: TextInputAction.done,
+                                onFieldSubmitted: (_) =>
+                                    _adicionarInstituicao(),
                                 decoration: InputDecoration(
                                   filled: true,
                                   fillColor: const Color(0xFFEFF0F6),
@@ -141,9 +241,14 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
                                 style: GoogleFonts.inter(fontSize: 18),
                               ),
                             ),
+<<<<<<< HEAD
                             const Spacer(),
                             ElevatedButton(
                               onPressed: _salvarInstituicao,
+=======
+                            ElevatedButton(
+                              onPressed: _adicionarInstituicao,
+>>>>>>> 169dadfc364fcccc5d2aef6e4bdd2d12d0e77a55
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0055FF),
                                 minimumSize: const Size(double.infinity, 50),
@@ -174,4 +279,46 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
       ),
     );
   }
+<<<<<<< HEAD
+=======
+
+  Widget _buildInstituicaoItem({
+    required String id,
+    required String nome,
+    required VoidCallback? onRemover,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+              blurRadius: 3,
+              color: Colors.black.withOpacity(0.1),
+              offset: const Offset(0, 2))
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Text(id,
+                  style: GoogleFonts.inter(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 15),
+              Text(nome, style: GoogleFonts.inter(fontSize: 16)),
+            ],
+          ),
+          IconButton(
+            icon:
+                const Icon(Icons.cancel_outlined, color: Colors.red, size: 24),
+            onPressed: onRemover,
+          ),
+        ],
+      ),
+    );
+  }
+>>>>>>> 169dadfc364fcccc5d2aef6e4bdd2d12d0e77a55
 }

@@ -13,7 +13,14 @@ dependencies:
   google_fonts: ^6.1.0
   intl: ^0.20.2 
   path: ^1.9.1
+<<<<<<< HEAD
   mobile_scanner: ^6.0.0
   
 flutter:
   uses-material-design: true
+=======
+  mobile_scanner: ^7.2.0
+
+dev_dependencies:
+  sqflite_common_ffi: ^2.3.4+4
+>>>>>>> 169dadfc364fcccc5d2aef6e4bdd2d12d0e77a55
