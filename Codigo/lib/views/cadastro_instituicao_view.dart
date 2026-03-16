@@ -236,7 +236,7 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
                                             final instituicao =
                                                 _instituicoes[index];
                                             return _buildInstituicaoItem(
-                                              id: (index + 1).toString(),
+                                              posicao: (index + 1).toString(),
                                               nome: instituicao.nome,
                                               onRemover: instituicao.id == null
                                                   ? null
@@ -304,7 +304,7 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
   }
 
   Widget _buildInstituicaoItem({
-    required String id,
+    required String posicao,
     required String nome,
     required VoidCallback? onRemover,
   }) {
@@ -328,7 +328,7 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
             child: Row(
               children: [
                 Text(
-                  id,
+                  posicao,
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
