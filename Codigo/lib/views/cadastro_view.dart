@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:patrimonio_mobile/views/cadastro_inventario_view.dart';
+import 'package:patrimonio_mobile/views/setor_view.dart';
 import '/widgets/custom_navbar.dart';
 
 class CadastroView extends StatefulWidget {
@@ -82,7 +83,14 @@ class _CadastroViewState extends State<CadastroView> {
                               _buildOptionCard(
                                 icon: Icons.store,
                                 title: 'Setor',
-                                onTap: () => print('Cadastrar Setor'),
+                                onTap: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const SetorView(),
+                                        ));
+                                  },    
                               ),
                               const SizedBox(height: 20),
                               _buildOptionCard(

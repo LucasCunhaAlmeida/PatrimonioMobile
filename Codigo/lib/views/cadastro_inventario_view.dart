@@ -78,7 +78,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
                   children: [
                     const Text('Instituição', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     DropdownButtonFormField<String>(
-                      value: _instituicaoSelecionada,
+                      initialValue: _instituicaoSelecionada,
                       decoration: const InputDecoration(hintText: 'Selecione a instituição'),
                       items: _instituicoes.map((inst) => DropdownMenuItem(value: inst, child: Text(inst))).toList(),
                       onChanged: (val) => setState(() => _instituicaoSelecionada = val),

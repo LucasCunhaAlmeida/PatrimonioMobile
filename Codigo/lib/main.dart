@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:patrimonio_mobile/views/home_view.dart';
-import 'views/inventario_view.dart';
 
 void main() async {
   // Garante que os widgets do Flutter estejam inicializados antes de abrir o banco

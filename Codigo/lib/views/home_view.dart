@@ -58,7 +58,7 @@ class _HomeViewState extends State<HomeView> {
                             ),
                           ),
                           DropdownButtonFormField<String>(
-                            value: dropDownValue,
+                            initialValue: dropDownValue,
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: Colors.white,

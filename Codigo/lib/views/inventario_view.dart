@@ -97,7 +97,7 @@ class _InventarioViewState extends State<InventarioView> {
                             const SizedBox(height: 10),
                           
                             DropdownButtonFormField<String>(
-                              value: setorSelecionado,
+                              initialValue: setorSelecionado,
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,
