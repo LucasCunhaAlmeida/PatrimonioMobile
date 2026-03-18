@@ -83,8 +83,6 @@ class NavBarWidget extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      // DICA: Remova o 'height: 100' ou aumente-o para ~110 para dar espaço 
-      // ao SafeArea em dispositivos com barras de navegação grandes.
       decoration: BoxDecoration(
         color: corFundo,
         boxShadow: [
