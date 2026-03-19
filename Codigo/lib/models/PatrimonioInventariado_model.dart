@@ -1,6 +1,6 @@
 class PatrimonioInventariado {
   final int? id;
-  final String numero;
+  String numero;
   final int idInventario;
   final int idSetor;
 

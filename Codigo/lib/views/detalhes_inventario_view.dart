@@ -302,17 +302,134 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
           Expanded(
             child: Text(
               p.numero,
-              style:
-                  GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w500),
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w500),
             ),
           ),
+          // Botão de Editar (Canetinha)
           IconButton(
-            icon:
-                const Icon(Icons.cancel_outlined, color: Colors.red, size: 24),
-            onPressed: () => print('Remover patrimônio ${p.numero}'),
+            icon: const Icon(Icons.edit, color: Color(0xFF0055FF), size: 24),
+            onPressed: () => _mostrarDialogoEditar(p),
+          ),
+          // Botão de Excluir (Lixeira)
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 24),
+            onPressed: () => _mostrarDialogoDeletar(p),
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _mostrarDialogoEditar(PatrimonioInventariado p) async {
+    final controller = TextEditingController(text: p.numero);
+    bool isLoading = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Text('Editar Patrimônio', style: GoogleFonts.interTight(fontWeight: FontWeight.w600)),
+              content: isLoading
+                  ? const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
+                  : TextField(
+                      controller: controller,
+                      decoration: const InputDecoration(
+                        labelText: 'Número do Patrimônio',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(context),
+                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                ),
+                TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (controller.text.trim().isEmpty) return;
+                          
+                          setStateDialog(() => isLoading = true);
+                          
+                          try {
+                            p.numero = controller.text.trim();
+                            // Vai funcionar perfeitamente agora que o model não é final e o Service foi salvo
+                            await _patrimonioService.atualizarPatrimonio(p);
+                            
+                            if (mounted) {
+                              Navigator.pop(context); // Fecha o pop-up
+                              _loadPatrimonios(_setorSelecionadoId!); // Recarrega a lista
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Atualizado com sucesso!')),
+                              );
+                            }
+                          } catch (e) {
+                            setStateDialog(() => isLoading = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Erro ao atualizar: $e')),
+                            );
+                          }
+                        },
+                  child: const Text('Salvar', style: TextStyle(color: Color(0xFF0055FF))),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+
+  Future<void> _mostrarDialogoDeletar(PatrimonioInventariado p) async {
+    bool isLoading = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Text('Excluir Patrimônio', style: GoogleFonts.interTight(fontWeight: FontWeight.w600)),
+              content: isLoading
+                  ? const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
+                  : Text('Tem certeza que deseja excluir o patrimônio "${p.numero}"? Essa ação não pode ser desfeita.'),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(context),
+                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                ),
+                TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setStateDialog(() => isLoading = true);
+                          try {
+                            await _patrimonioService.excluirPatrimonio(p.id!);
+                            
+                            if (mounted) {
+                              Navigator.pop(context); // Fecha o pop-up
+                              _loadPatrimonios(_setorSelecionadoId!); // Recarrega a lista
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Excluído com sucesso!')),
+                              );
+                            }
+                          } catch (e) {
+                            setStateDialog(() => isLoading = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Erro ao excluir: $e')),
+                            );
+                          }
+                        },
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Excluir'),
+                ),
+              ],
+            );
+          }
+        );
+      },
     );
   }
 }

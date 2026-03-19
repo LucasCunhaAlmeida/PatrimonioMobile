@@ -18,7 +18,15 @@ class PatrimonioinventariadoService {
     return result.map((item) => PatrimonioInventariado.fromMap(item)).toList();
   }
 
-  Future<int> excluirPatrimonio(int id) async {
+Future<int> atualizarPatrimonio(PatrimonioInventariado ativo) async {
+    return await databaseHelper.updatePatrimonio(ativo.toMap());
+  }
+
+Future<int> excluirPatrimonio(int id) async {
+    if(id == null){
+      throw Exception("exclusão falhou, id não identificado");
+    }
+
     return await databaseHelper.deletePatrimonio(id);
   }
 }

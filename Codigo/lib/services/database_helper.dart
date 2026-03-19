@@ -82,7 +82,16 @@ Future<int> insertPatrimonio(Map<String, dynamic> row) async {
       whereArgs: [idSetor, idInventario],
     );
   }
-
+  Future<int> updatePatrimonio(Map<String, dynamic> row) async {
+    Database db = await instance.database;
+    int id = row['id'];
+    return await db.update(
+      'PatrimonioInventariado',
+      row,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
   Future<int> deletePatrimonio(int id) async {
     Database db = await instance.database;
     return await db.delete(
