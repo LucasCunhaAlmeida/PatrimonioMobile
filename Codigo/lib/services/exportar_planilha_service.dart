@@ -5,43 +5,75 @@ import 'dart:io';
 import 'database_helper.dart';
 
 class ExportarPlanilhaService {
-  Future<String> exportarPlanilha(String nomeArquivo) async {
-    final excel = Excel.createExcel();
-    final sheet = excel['Dados'];
 
-    // 🔹 Busca dados do banco (SQLite)
-    final dadosBanco = await DatabaseHelper.instance.getRelatorioExcel();
+  Future<String> gerarRelatorioGeral(String nomeArquivo) async {
 
-    // 🔹 Cabeçalho
-    sheet.appendRow([
-      TextCellValue('Instituição'),
-      TextCellValue('Setor'),
-      TextCellValue('Inventário'),
-      TextCellValue('Patrimônio'),
-    ]);
+    final List<Map<String, dynamic>> dadosBanco = await DatabaseHelper.instance.getRelatorioExcel();
+    
+    var excel = Excel.createExcel();
+    String defaultSheet = excel.getDefaultSheet()!;
+    excel.rename(defaultSheet, 'Relatório de Patrimônio');
+    Sheet sheetObject = excel['Relatório de Patrimônio'];
 
-    // 🔹 Dados
+    // 1. Cabeçalho (Linha 0)
+    List<String> cabecalho = ['Instituição', 'Setor', 'Inventário', 'Patrimônio'];
+    for (var i = 0; i < cabecalho.length; i++) {
+      var cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+      cell.value = TextCellValue(cabecalho[i]);
+    }
+
+    int linhaAtual = 1;
+
+    // Variáveis para controlar a repetição de nomes (Efeito Escada)
+    String ultimaInst = "";
+    String ultimoSetor = "";
+    String ultimoInv = "";
+
+    // 2. Loop único pelos dados do banco
     for (var row in dadosBanco) {
-      sheet.appendRow([
-        TextCellValue(row['instituicao']),
-        TextCellValue(row['setor']),
-        TextCellValue(row['inventario']),
-        TextCellValue(row['patrimonio']),
-      ]);
+      String instAtual = row['instituicao']?.toString() ?? "";
+      String setorAtual = row['setor']?.toString() ?? "";
+      String invAtual = row['inventario']?.toString() ?? "";
+      String patCod = row['patrimonio_cod']?.toString() ?? "";
+      String patDesc = row['patrimonio_desc']?.toString() ?? "";
+
+      // Coluna A: Instituição (Só escreve se for diferente da linha de cima)
+      if (instAtual != ultimaInst) {
+        sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: linhaAtual))
+            .value = TextCellValue(instAtual);
+        ultimaInst = instAtual;
+        ultimoSetor = ""; // Reseta o controle do setor quando a instituição muda
+        ultimoInv = "";
+      }
+
+      // Coluna B: Setor (Só escreve se for diferente)
+      if (setorAtual != ultimoSetor) {
+        sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: linhaAtual))
+            .value = TextCellValue(setorAtual);
+        ultimoSetor = setorAtual;
+        ultimoInv = ""; // Reseta o controle do inventário quando o setor muda
+      }
+
+      // Coluna C: Inventário (Só escreve se for diferente)
+      if (invAtual != ultimoInv) {
+        sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: linhaAtual))
+            .value = TextCellValue(invAtual);
+        ultimoInv = invAtual;
+      }
+
+      // Coluna D: Patrimônio (Sempre escreve)
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: linhaAtual))
+          .value = TextCellValue("$patCod - $patDesc");
+
+      linhaAtual++;
     }
 
-    final fileBytes = excel.encode();
-    if (fileBytes == null) {
-      throw Exception('Erro ao gerar a planilha');
-    }
-
+    // 3. Salvamento do arquivo
+    List<int>? fileBytes = excel.save();
     final directory = await getApplicationDocumentsDirectory();
+    final fullPath = p.join(directory.path, "$nomeArquivo.xlsx");
+    await File(fullPath).writeAsBytes(fileBytes!);
 
-    final path =
-        '${directory.path}/${nomeArquivo}_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-
-    final file = await File(path).writeAsBytes(fileBytes);
-
-    return file.path;
+    return fullPath;
   }
 }

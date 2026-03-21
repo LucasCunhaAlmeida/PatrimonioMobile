@@ -12,37 +12,40 @@ class ArquivosView extends StatefulWidget {
 }
 
 class _ArquivosViewState extends State<ArquivosView> {
+  // 🔹 CORREÇÃO 1: Declarar a chave que estava faltando
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _processando = false;
 
-  Future<void> _exportarPlanilha() async {
+Future<void> _exportarPlanilha() async {
+    setState(() => _processando = true);
     try {
       final service = ExportarPlanilhaService();
-      final caminho =
-          await service.exportarPlanilha('patrimonio_exportado');
+      final caminho = await service.gerarRelatorioGeral('patrimonio_exportado');
 
-      // 🔥 NOVO SHARE_PLUS (v12)
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(caminho)],
-          text: 'Segue a planilha de patrimônios',
-        ),
+      final box = context.findRenderObject() as RenderBox?;
+      final posicao = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+
+      // ✅ Sintaxe correta para a v7.2.2
+      await Share.shareXFiles(
+        [XFile(caminho)],
+        text: 'Segue a planilha de patrimônios',
+        sharePositionOrigin: posicao,
       );
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Planilha exportada com sucesso!')),
       );
-
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao exportar planilha')),
+        SnackBar(content: Text('Erro ao exportar: $e')),
       );
+    } finally {
+      if (mounted) setState(() => _processando = false);
     }
   }
-}
-
+  
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -51,72 +54,53 @@ class _ArquivosViewState extends State<ArquivosView> {
         FocusManager.instance.primaryFocus?.unfocus();
       },
       child: Scaffold(
-        key: scaffoldKey,
+        key: scaffoldKey, // Agora o scaffoldKey existe
         backgroundColor: const Color(0xFFF1F4F8),
         body: Column(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
               child: Container(
-                decoration: const BoxDecoration(),
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              20, 60, 20, 0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 20),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.max,
-                                  children: [
-                                    Text(
-                                      'Instituição: ',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF57636C),
-                                      ),
-                                    ),
-                                    Text(
-                                      'DSI',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF57636C),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 60, 20, 0),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Instituição: ',
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF57636C),
                               ),
-                              _buildFileButton(
-                                label: 'Importar patrimônio',
-                                icon: Icons.download,
-                                onPressed: () => print('Importar pressionado'),
+                            ),
+                            Text(
+                              'DSI',
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF57636C),
                               ),
-                              const SizedBox(height: 10),
-                              _buildFileButton(
-                                label: 'Exportar patrimônio',
-                                icon: Icons.upload_sharp,
-                                onPressed: () => print('Exportar pressionado'),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                      _buildFileButton(
+                        label: 'Importar patrimônio',
+                        icon: Icons.download,
+                        onPressed: () => print('Importar pressionado'),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildFileButton(
+                        label: 'Exportar patrimônio',
+                        icon: Icons.upload_sharp,
+                        onPressed: _exportarPlanilha,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -133,8 +117,14 @@ class _ArquivosViewState extends State<ArquivosView> {
     required VoidCallback onPressed,
   }) {
     return ElevatedButton.icon(
-      onPressed: _exportarPlanilha,
-      icon: Icon(icon, size: 20, color: const Color(0xFF57636C)),
+      onPressed: _processando ? null : onPressed,
+      icon: _processando
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF57636C)),
+            )
+          : Icon(icon, size: 20, color: const Color(0xFF57636C)),
       label: Text(
         label,
         style: GoogleFonts.interTight(
@@ -154,4 +144,4 @@ class _ArquivosViewState extends State<ArquivosView> {
       ),
     );
   }
-}
+} // 🔹 FIM DA CLASSE (Última chave do arquivo)

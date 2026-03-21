@@ -24,10 +24,6 @@ class PatrimonioinventariadoService {
   }
 
   Future<int> excluirPatrimonio(int id) async {
-    if (id == null) {
-      throw Exception("exclusão falhou, id não identificado");
-    }
-
     return await databaseHelper.deletePatrimonio(id);
   }
 }

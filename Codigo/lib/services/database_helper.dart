@@ -82,6 +82,7 @@ class DatabaseHelper {
     JOIN Inventario inv ON p.idInventario = inv.id
     JOIN Setor s ON p.idSetor = s.id
     JOIN Instituicao i ON inv.idInstituicao = i.id
+    ORDER BY i.nome, s.nome, inv.nome
   ''');
   }
 
