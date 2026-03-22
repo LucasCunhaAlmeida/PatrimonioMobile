@@ -1,8 +1,8 @@
 import 'package:excel/excel.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import 'dart:io';
 import 'database_helper.dart';
+import 'patrimonioInventariado_service.dart';
+import '../models/patrimonioInventariado_model.dart';
 
 class ImportarPlanilhaService {
   final dbHelper = DatabaseHelper.instance;
@@ -25,22 +25,80 @@ class ImportarPlanilhaService {
         final patrimonioNumero = row[3]?.value?.toString();
 
         if (patrimonioNumero != null) {
-          // Aqui você deve implementar a lógica para:
-          // 1. Verificar se a instituição/setor/inventário já existem
-          // 2. Ou simplesmente inserir o patrimônio vinculado aos IDs corretos
+          bool existe = await _patrimonioExiste(patrimonioNumero);
+
+          if (existe) continue;
+
+          await _salvarNoBanco(
+              patrimonioNumero, instituicaoNome, setorNome, inventarioNome);
         }
-          await _salvarNoBanco(patrimonioNumero, inventarioNome);
       }
     }
   }
 
-  Future<void> _salvarNoBanco(String numero, String? inventarioNome) async {
-    // Exemplo simplificado de inserção usando seu DatabaseHelper
-    await dbHelper.insertPatrimonio({
-      'numero': numero,
-      'idInventario': 1, // Você precisará buscar o ID real baseado no nome
-      'idSetor': 1,      // Você precisará buscar o ID real baseado no nome
+  Future<void> _salvarNoBanco(String numero, String? instituicaoNome,
+      String? setorNome, String? inventarioNome) async {
+    // 1. Resolvemos a Instituição primeiro (base de tudo)
+    int idInst =
+        await _obterOuCriarInstituicao(instituicaoNome ?? 'Desconhecida');
+
+    // 2. Com o ID da Instituição, resolvemos o Setor e o Inventário
+    int idSetor = await _obterOuCriarSetor(setorNome ?? 'Desconhecido', idInst);
+    int idInv =
+        await _obterOuCriarInventario(inventarioNome ?? 'Desconhecido', idInst);
+
+    // 3. Agora sim temos os IDs reais! Podemos inserir o patrimônio.
+    // Como você já tem um Service para isso, o ideal é instanciá-lo aqui:
+    // Como deve ficar:
+    final patrimonioService = PatrimonioInventariadoService();
+    await patrimonioService.inserirPatrimonio(PatrimonioInventariado(
+        numero: numero, idSetor: idSetor, idInventario: idInv));
+  }
+
+  Future<int> _obterOuCriarInstituicao(String nome) async {
+    final db = await dbHelper.database;
+    var res =
+        await db.query('Instituicao', where: 'nome = ?', whereArgs: [nome]);
+
+    if (res.isNotEmpty) return res.first['id'] as int;
+
+    return await db.insert('Instituicao', {'nome': nome});
+  }
+
+  Future<int> _obterOuCriarSetor(String nome, int idInstituicao) async {
+    final db = await dbHelper.database;
+    var res = await db.query('Setor',
+        where: 'nome = ? AND idInstituicao = ?',
+        whereArgs: [nome, idInstituicao]);
+
+    if (res.isNotEmpty) return res.first['id'] as int;
+
+    return await db
+        .insert('Setor', {'nome': nome, 'idInstituicao': idInstituicao});
+  }
+
+  Future<int> _obterOuCriarInventario(String nome, int idInstituicao) async {
+    final db = await dbHelper.database;
+    var res = await db.query('Inventario',
+        where: 'nome = ? AND idInstituicao = ?',
+        whereArgs: [nome, idInstituicao]);
+
+    if (res.isNotEmpty) return res.first['id'] as int;
+
+    return await db.insert('Inventario', {
+      'nome': nome,
+      'idInstituicao': idInstituicao,
     });
   }
-  
+
+  Future<bool> _patrimonioExiste(String patrimonioNumero) async {
+    final db = await dbHelper.database;
+
+    final List<Map<String, dynamic>> resultado = await db.query(
+        'PatrimonioInventariado',
+        where: 'numero = ?',
+        whereArgs: [patrimonioNumero]);
+
+    return resultado.isNotEmpty;
+  }
 }

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:patrimonio_mobile/models/inventario_model.dart';
 import 'package:patrimonio_mobile/models/PatrimonioInventariado_model.dart';
 import 'package:patrimonio_mobile/models/setor_model.dart';
-import 'package:patrimonio_mobile/services/PatrimonioInventariado_service.dart';
+import 'package:patrimonio_mobile/services/patrimonioInventariado_service.dart';
 import 'package:patrimonio_mobile/services/setor_service.dart';
 import 'package:patrimonio_mobile/views/scanner_view.dart';
 import '/widgets/custom_navbar.dart';

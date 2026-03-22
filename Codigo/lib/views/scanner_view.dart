@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:patrimonio_mobile/models/PatrimonioInventariado_model.dart';
-import 'package:patrimonio_mobile/services/PatrimonioInventariado_service.dart';
+import 'package:patrimonio_mobile/services/patrimonioInventariado_service.dart';
 
 class ScannerView extends StatefulWidget {
   final int idInventario;
