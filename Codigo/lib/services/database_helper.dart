@@ -69,73 +69,40 @@ class DatabaseHelper {
     await _seedMockData(db);
   }
 
-Future<int> insertPatrimonio(Map<String, dynamic> row) async {
-    Database db = await instance.database;
-    return await db.insert('PatrimonioInventariado', row);
-  }
-
-  Future<List<Map<String, dynamic>>> getPatrimoniosPorSetor(int idSetor, int idInventario) async {
-    Database db = await instance.database;
-    return await db.query(
-      'PatrimonioInventariado',
-      where: 'idSetor = ? AND idInventario = ?',
-      whereArgs: [idSetor, idInventario],
-    );
-  }
-  Future<int> updatePatrimonio(Map<String, dynamic> row) async {
-    Database db = await instance.database;
-    int id = row['id'];
-    return await db.update(
-      'PatrimonioInventariado',
-      row,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-  Future<int> deletePatrimonio(int id) async {
-    Database db = await instance.database;
-    return await db.delete(
-      'PatrimonioInventariado',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-
-  }
-}
   /// Dados de exemplo para desenvolvimento.
-  /// Remova ou comente este m�todo quando o CRUD real de Institui��o estiver pronto.
+  /// Remova ou comente este método quando o CRUD real de Instituição estiver pronto.
   Future<void> _seedMockData(Database db) async {
-    // Institui��es
+    // Instituições
     final int idUFS = await db.insert('Instituicao', {'nome': 'UFS'});
     final int idUnicamp = await db.insert('Instituicao', {'nome': 'Unicamp'});
 
-    // Setores (necess�rios para PatrimonioInventariado)
+    // Setores (necessários para PatrimonioInventariado)
     final int idTI =
         await db.insert('Setor', {'nome': 'TI', 'idInstituicao': idUFS});
     await db
         .insert('Setor', {'nome': 'Biblioteca', 'idInstituicao': idUnicamp});
 
-    // Invent�rios vinculados �s institui��es
+    // Inventários vinculados às instituições
     final int idInv1 = await db.insert('Inventario', {
-      'nome': 'Invent�rio Anual 2025',
+      'nome': 'Inventário Anual 2025',
       'dataInicio': '2025-01-10',
       'dataFim': '2025-01-31',
       'idInstituicao': idUFS,
     });
     await db.insert('Inventario', {
-      'nome': 'Invent�rio Semestral',
+      'nome': 'Inventário Semestral',
       'dataInicio': '2025-06-01',
       'dataFim': '2025-06-15',
       'idInstituicao': idUFS,
     });
     await db.insert('Inventario', {
-      'nome': 'Invent�rio Geral 2025',
+      'nome': 'Inventário Geral 2025',
       'dataInicio': '2025-03-05',
       'dataFim': '2025-03-20',
       'idInstituicao': idUnicamp,
     });
 
-    // Patrim�nio de exemplo
+    // Patrimônio de exemplo
     await db.insert('PatrimonioInventariado', {
       'numero': 'PAT-001',
       'idInventario': idInv1,
@@ -153,4 +120,4 @@ Future<int> insertPatrimonio(Map<String, dynamic> row) async {
       await _seedMockData(db);
     }
   }
-
+}
