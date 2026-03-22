@@ -11,22 +11,19 @@ class PatrimonioinventariadoService {
     return await databaseHelper.insertPatrimonio(ativo.toMap());
   }
 
-  Future<List<PatrimonioInventariado>> listarPatrimonio(int idSetor, int idInventario) async {
+  Future<List<PatrimonioInventariado>> listarPatrimonio(
+      int idSetor, int idInventario) async {
     final List<Map<String, dynamic>> result =
         await databaseHelper.getPatrimoniosPorSetor(idSetor, idInventario);
 
     return result.map((item) => PatrimonioInventariado.fromMap(item)).toList();
   }
 
-Future<int> atualizarPatrimonio(PatrimonioInventariado ativo) async {
+  Future<int> atualizarPatrimonio(PatrimonioInventariado ativo) async {
     return await databaseHelper.updatePatrimonio(ativo.toMap());
   }
 
-Future<int> excluirPatrimonio(int id) async {
-    if(id == null){
-      throw Exception("exclusão falhou, id não identificado");
-    }
-
+  Future<int> excluirPatrimonio(int id) async {
     return await databaseHelper.deletePatrimonio(id);
   }
 }

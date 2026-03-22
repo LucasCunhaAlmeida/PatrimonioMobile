@@ -170,7 +170,7 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                 ? const Center(
                                     child: CircularProgressIndicator())
                                 : DropdownButtonFormField<int>(
-                                    value: _setorSelecionadoId,
+                                    initialValue: _setorSelecionadoId,
                                     decoration: InputDecoration(
                                       filled: true,
                                       fillColor: Colors.white,
