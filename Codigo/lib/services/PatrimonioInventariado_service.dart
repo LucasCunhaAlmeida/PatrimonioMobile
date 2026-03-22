@@ -1,32 +1,57 @@
+import 'package:sqflite/sqflite.dart';
 import 'package:patrimonio_mobile/models/PatrimonioInventariado_model.dart';
 import 'package:patrimonio_mobile/services/database_helper.dart';
 
 class PatrimonioinventariadoService {
-  final DatabaseHelper databaseHelper = DatabaseHelper.instance;
+  final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
 
   Future<int> inserirPatrimonio(PatrimonioInventariado ativo) async {
     if (ativo.idInventario == 0 || ativo.idSetor == 0) {
       throw Exception("Setor ou Inventário não informados");
     }
-    return await databaseHelper.insertPatrimonio(ativo.toMap());
+    
+    Database db = await _databaseHelper.database;
+    
+    return await db.insert('PatrimonioInventariado', ativo.toMap());
   }
 
   Future<List<PatrimonioInventariado>> listarPatrimonio(int idSetor, int idInventario) async {
-    final List<Map<String, dynamic>> result =
-        await databaseHelper.getPatrimoniosPorSetor(idSetor, idInventario);
+    Database db = await _databaseHelper.database;
+    
+    final List<Map<String, dynamic>> result = await db.query(
+      'PatrimonioInventariado',
+      where: 'idSetor = ? AND idInventario = ?',
+      whereArgs: [idSetor, idInventario],
+    );
 
     return result.map((item) => PatrimonioInventariado.fromMap(item)).toList();
   }
 
-Future<int> atualizarPatrimonio(PatrimonioInventariado ativo) async {
-    return await databaseHelper.updatePatrimonio(ativo.toMap());
-  }
-
-Future<int> excluirPatrimonio(int id) async {
-    if(id == null){
-      throw Exception("exclusão falhou, id não identificado");
+  Future<int> atualizarPatrimonio(PatrimonioInventariado ativo) async {
+    Database db = await _databaseHelper.database;
+    
+    Map<String, dynamic> row = ativo.toMap();
+    int? id = row['id']; 
+    
+    if (id == null) {
+      throw Exception("Atualização falhou, ID não identificado");
     }
 
-    return await databaseHelper.deletePatrimonio(id);
+    return await db.update(
+      'PatrimonioInventariado',
+      row,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> excluirPatrimonio(int id) async {
+    Database db = await _databaseHelper.database;
+    
+    return await db.delete(
+      'PatrimonioInventariado',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }
