@@ -335,6 +335,8 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                   ? const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
                   : TextField(
                       controller: controller,
+                      keyboardType: TextInputType.number,
+                      maxLength: 10,
                       decoration: const InputDecoration(
                         labelText: 'Número do Patrimônio',
                         border: OutlineInputBorder(),

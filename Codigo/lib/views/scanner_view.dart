@@ -28,8 +28,8 @@ class _ScannerViewState extends State<ScannerView> {
     if (_isProcessing) return;
 
     final codigoLimpo = codigo.trim();
-    if (!RegExp(r'^\d{6}$').hasMatch(codigoLimpo)) {
-      _notificar("Código inválido (6 dígitos)", Colors.orange);
+    if (!RegExp(r'^\d{10}$').hasMatch(codigoLimpo)) {
+      _notificar("Código inválido (10 dígitos)", Colors.orange);
       return;
     }
 
@@ -79,8 +79,8 @@ class _ScannerViewState extends State<ScannerView> {
         content: TextField(
           controller: _manualController,
           keyboardType: TextInputType.number,
-          maxLength: 6,
-          decoration: const InputDecoration(hintText: "000000"),
+          maxLength: 10,
+          decoration: const InputDecoration(hintText: "0000000000"),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
