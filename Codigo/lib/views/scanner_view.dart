@@ -52,7 +52,7 @@ class _ScannerViewState extends State<ScannerView> {
         _statusCor = Colors.green;
       });
 
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(const Duration(milliseconds: 1000));
     } catch (e) {
       _notificar("Erro ao salvar no banco", Colors.red);
     } finally {
