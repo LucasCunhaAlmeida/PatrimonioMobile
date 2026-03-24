@@ -15,42 +15,59 @@ class ImportarPlanilhaService {
       var sheet = excel.tables[table];
       if (sheet == null) continue;
 
-      // Primeira linha (0) é o cabeçalho, então, pulamos o.
       for (int i = 1; i < sheet.maxRows; i++) {
         var row = sheet.rows[i];
 
         final instituicaoNome = row[0]?.value?.toString();
         final setorNome = row[1]?.value?.toString();
         final inventarioNome = row[2]?.value?.toString();
-        final patrimonioNumero = row[3]?.value?.toString()?.trim();
+        
+        final dataInicio = row[3]?.value?.toString(); 
+        final dataFim = row[4]?.value?.toString();
+        
+        final patrimonioNumero = row[5]?.value?.toString()?.trim();
 
         if (patrimonioNumero != null && patrimonioNumero.isNotEmpty) {
           bool existe = await _patrimonioExiste(patrimonioNumero);
-
           if (existe) continue;
 
           await _salvarNoBanco(
-              patrimonioNumero, instituicaoNome, setorNome, inventarioNome);
+            patrimonioNumero, 
+            instituicaoNome, 
+            setorNome, 
+            inventarioNome, 
+            dataInicio, 
+            dataFim
+          );
         }
       }
     }
   }
 
-  Future<void> _salvarNoBanco(String numero, String? instituicaoNome,
-      String? setorNome, String? inventarioNome) async {
-    if (numero.isEmpty) {
-      throw Exception('Número do patrimônio não pode estar vazio');
-    }
-
-    int idInst =
-        await _obterOuCriarInstituicao(instituicaoNome ?? 'Desconhecida');
-
+  Future<void> _salvarNoBanco(
+      String numero, 
+      String? instituicaoNome,
+      String? setorNome, 
+      String? inventarioNome,
+      String? dataInicio,
+      String? dataFim) async {
+    
+    int idInst = await _obterOuCriarInstituicao(instituicaoNome ?? 'Desconhecida');
     int idSetor = await _obterOuCriarSetor(setorNome ?? 'Desconhecido', idInst);
-    int idInv = await _obterOuCriarInventario(inventarioNome ?? 'Desconhecido', idInst);
+    
+    int idInv = await _obterOuCriarInventario(
+      inventarioNome ?? 'Desconhecido', 
+      idInst, 
+      dataInicio, 
+      dataFim
+    );
 
     final patrimonioService = PatrimonioInventariadoService();
     await patrimonioService.inserirPatrimonio(PatrimonioInventariado(
-        numero: numero, idSetor: idSetor, idInventario: idInv));
+        numero: numero, 
+        idSetor: idSetor, 
+        idInventario: idInv
+    ));
   }
 
   Future<int> _obterOuCriarInstituicao(String nome) async {
@@ -75,7 +92,8 @@ class ImportarPlanilhaService {
         .insert('Setor', {'nome': nome, 'idInstituicao': idInstituicao});
   }
 
-  Future<int> _obterOuCriarInventario(String nome, int idInstituicao) async {
+  Future<int> _obterOuCriarInventario(
+      String nome, int idInstituicao, String? dataInicio, String? dataFim) async {
     final db = await dbHelper.database;
     var res = await db.query('Inventario',
         where: 'nome = ? AND idInstituicao = ?',
@@ -86,6 +104,8 @@ class ImportarPlanilhaService {
     return await db.insert('Inventario', {
       'nome': nome,
       'idInstituicao': idInstituicao,
+      'dataInicio': dataInicio ?? DateTime.now().toIso8601String().split('T')[0],
+      'dataFim': dataFim ?? "",
     });
   }
 
