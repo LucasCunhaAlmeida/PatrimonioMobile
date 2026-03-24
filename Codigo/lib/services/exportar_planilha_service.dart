@@ -18,8 +18,11 @@ class ExportarPlanilhaService {
       'Instituição',
       'Setor',
       'Inventário',
+      'Data Início',
+      'Data Fim',
       'Patrimônio'
     ];
+
     for (var i = 0; i < cabecalho.length; i++) {
       var cell = sheetObject
           .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
@@ -32,26 +35,34 @@ class ExportarPlanilhaService {
       String instAtual = row['instituicao']?.toString() ?? "";
       String setorAtual = row['setor']?.toString() ?? "";
       String invAtual = row['inventario']?.toString().trim() ?? "";
+
+      String dataInicio = row['dataInicio']?.toString() ?? "";
+      String dataFim = row['dataFim']?.toString() ?? "";
+      
       String patAtual = row['patrimonio']?.toString() ?? "";
 
       sheetObject
-          .cell(
-              CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: linhaAtual))
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: linhaAtual))
           .value = TextCellValue(instAtual);
 
       sheetObject
-          .cell(
-              CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: linhaAtual))
+          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: linhaAtual))
           .value = TextCellValue(setorAtual);
 
       sheetObject
-          .cell(
-              CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: linhaAtual))
+          .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: linhaAtual))
           .value = TextCellValue(invAtual);
 
       sheetObject
-          .cell(
-              CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: linhaAtual))
+          .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: linhaAtual))
+          .value = TextCellValue(dataInicio);
+
+      sheetObject
+          .cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: linhaAtual))
+          .value = TextCellValue(dataFim);
+
+      sheetObject
+          .cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: linhaAtual))
           .value = TextCellValue(patAtual);
 
       linhaAtual++;

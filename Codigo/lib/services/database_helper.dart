@@ -73,6 +73,8 @@ class DatabaseHelper {
       i.nome AS instituicao,
       s.nome AS setor,
       inv.nome AS inventario,
+      inv.dataInicio,
+      inv.dataFim,
       p.numero AS patrimonio
     FROM PatrimonioInventariado p
     JOIN Inventario inv ON p.idInventario = inv.id

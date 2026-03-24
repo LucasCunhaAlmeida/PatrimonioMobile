@@ -1,8 +1,8 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:patrimonio_mobile/models/PatrimonioInventariado_model.dart';
+import 'package:patrimonio_mobile/models/patrimonioInventariado_model.dart';
 import 'package:patrimonio_mobile/services/database_helper.dart';
 
-class PatrimonioinventariadoService {
+class PatrimonioInventariadoService {
   final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
 
   Future<int> inserirPatrimonio(PatrimonioInventariado ativo) async {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:patrimonio_mobile/models/PatrimonioInventariado_model.dart';
-import 'package:patrimonio_mobile/services/PatrimonioInventariado_service.dart';
+import 'package:patrimonio_mobile/models/patrimonioInventariado_model.dart';
+import 'package:patrimonio_mobile/services/patrimonioInventariado_service.dart';
 
 class ScannerView extends StatefulWidget {
   final int idInventario;
@@ -15,7 +15,7 @@ class ScannerView extends StatefulWidget {
 }
 
 class _ScannerViewState extends State<ScannerView> {
-  final PatrimonioinventariadoService _service = PatrimonioinventariadoService();
+  final PatrimonioInventariadoService _service = PatrimonioInventariadoService();
   final MobileScannerController scannerController = MobileScannerController();
   final AudioPlayer player = AudioPlayer();
   final TextEditingController _manualController = TextEditingController();
