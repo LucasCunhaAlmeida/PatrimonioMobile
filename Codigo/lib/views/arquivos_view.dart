@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import '../widgets/custom_navbar.dart';
 import 'package:patrimonio_mobile/services/exportar_planilha_service.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:patrimonio_mobile/services/importar_planilha_service.dart';
 
 class ArquivosView extends StatefulWidget {
   const ArquivosView({super.key});
@@ -42,6 +44,54 @@ class _ArquivosViewState extends State<ArquivosView> {
       );
     } finally {
       if (mounted) setState(() => _processando = false);
+    }
+  }
+
+  Future<void> _importarPlanilha() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx', 'xls'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        String caminhoArquivo = result.files.single.path!;
+
+        setState(() {
+          _processando = true; 
+        });
+
+        final importacaoService = ImportarPlanilhaService();
+        await importacaoService.consumirRelatorio(caminhoArquivo);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Planilha importada e salva no banco com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        debugPrint('Importação cancelada pelo usuário.');
+      }
+    } catch (e) {
+      debugPrint('Erro na importação: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao importar: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _processando = false;
+        });
+      }
     }
   }
 
@@ -90,7 +140,7 @@ class _ArquivosViewState extends State<ArquivosView> {
                       _buildFileButton(
                         label: 'Importar patrimônio',
                         icon: Icons.download,
-                        onPressed: () => print('Importar pressionado'),
+                        onPressed: () => _importarPlanilha,
                       ),
                       const SizedBox(height: 10),
                       _buildFileButton(
