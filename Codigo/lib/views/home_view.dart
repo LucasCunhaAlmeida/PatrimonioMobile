@@ -242,63 +242,67 @@ class _HomeViewState extends State<HomeView> {
       required String titulo,
       required String inicio,
       required String fim}) {
-    return Container(
-      width: 100,
-      height: 80,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 5,
-            color: Colors.black.withOpacity(0.1),
-            offset: const Offset(0, 2),
-          )
-        ],
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10),
-            child: Icon(Icons.edit_calendar_rounded,
-                color: Color(0xFF0055FF), size: 40),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                DetalhesInventarioView(inventario: inventario),
           ),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titulo,
-                  style: GoogleFonts.interTight(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: [
-                    Text('Início: $inicio',
-                        style: const TextStyle(fontSize: 12)),
-                    const Text(' | ', style: TextStyle(fontSize: 12)),
-                    Text('Fim: $fim', style: const TextStyle(fontSize: 12)),
-                  ],
-                ),
-              ],
+        );
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: 100,
+        height: 80,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 5,
+              color: Colors.black.withOpacity(0.1),
+              offset: const Offset(0, 2),
+            )
+          ],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Icon(Icons.edit_calendar_rounded,
+                  color: Color(0xFF0055FF), size: 40),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_forward_ios,
-                color: Colors.grey, size: 20),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      DetalhesInventarioView(inventario: inventario),
-                ),
-              );
-            },
-          ),
-        ],
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titulo,
+                    style: GoogleFonts.interTight(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Row(
+                    children: [
+                      Text('Início: $inicio',
+                          style: const TextStyle(fontSize: 12)),
+                      const Text(' | ', style: TextStyle(fontSize: 12)),
+                      Text('Fim: $fim', style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Icon(Icons.arrow_forward_ios,
+                  color: Colors.grey, size: 20),
+            ),
+          ],
+        ),
       ),
     );
   }
