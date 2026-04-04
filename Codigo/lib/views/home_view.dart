@@ -29,18 +29,7 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-    _loadInstituicoes();
-  }
-
-  Future<void> _loadInstituicoes() async {
-    setState(() => _loadingInstituicoes = true);
-
-    final instituicoes = await _instituicaoService.queryAllInstituicoes();
-
-    setState(() {
-      _instituicoes = instituicoes;
-      _loadingInstituicoes = false;
-    });
+    _carregarInstituicoes();
   }
 
   Future<void> _onInstituicaoChanged(int? idInstituicao) async {
@@ -66,6 +55,23 @@ class _HomeViewState extends State<HomeView> {
     });
   }
 
+  Future<void> _carregarInstituicoes() async {
+    setState(() => _loadingInstituicoes = true);
+
+    final lista = await _instituicaoService.queryAllInstituicoes();
+
+    setState(() {
+      _instituicoes = lista;
+      _loadingInstituicoes = false;
+    });
+
+    if (lista.length == 1) {
+      final idUnico = lista.first.id;
+
+      await _onInstituicaoChanged(idUnico);
+    }
+  }
+
   String _formatarData(String data) {
     final partes = data.split('-');
     if (partes.length == 3) {
@@ -77,163 +83,168 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        FocusManager.instance.primaryFocus?.unfocus();
-      },
-      child: Scaffold(
-        key: scaffoldKey,
-        backgroundColor: const Color(0xFFF1F4F8), // Cor de fundo padrão
-        body: Column(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  // --- CABEÇALHO (INSTITUIÇÃO) ---
-                  Container(
-                    width: double.infinity,
-                    height: 130,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEFF0F6),
-                    ),
-                    child: Padding(
-                      padding:
-                          const EdgeInsetsDirectional.fromSTEB(20, 30, 20, 0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          Align(
-                            alignment: const AlignmentDirectional(-1, 0),
-                            child: Text(
-                              'Instituição',
-                              style: GoogleFonts.interTight(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                          DropdownButtonFormField<int>(
-                            initialValue: _instituicaoSelecionadaId,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide:
-                                    const BorderSide(color: Color(0x9A57636C)),
-                              ),
-                            ),
-                            hint: const Text('Selecione a Instituição'),
-                            items: _instituicoes
-                                .map((inst) => DropdownMenuItem<int>(
-                                      value: inst.id,
-                                      child: Text(inst.nome),
-                                    ))
-                                .toList(),
-                            onChanged: _loadingInstituicoes
-                                ? null
-                                : (val) => _onInstituicaoChanged(val),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
+        onTap: () {
+          FocusScope.of(context).unfocus();
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: Scaffold(
+          key: scaffoldKey,
+          backgroundColor: const Color(0xFFF1F4F8), // Cor de fundo padrão
+          body: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 130,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEFF0F6),
                         ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              child: Text(
-                                'Inventários',
-                                style: GoogleFonts.interTight(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[700],
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                              20, 30, 20, 0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.max,
+                            children: [
+                              Align(
+                                alignment: const AlignmentDirectional(-1, 0),
+                                child: Text(
+                                  'Instituição',
+                                  style: GoogleFonts.interTight(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
                               ),
+                              DropdownButtonFormField<int>(
+                                value: _instituicaoSelecionadaId,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  hintText: 'Ex: INSTITUIÇÃO B',
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: Color(0x9A57636C)),
+                                  ),
+                                ),
+                                hint: const Text('Selecione a Instituição'),
+                                items: _instituicoes
+                                    .map((inst) => DropdownMenuItem<int>(
+                                          value: inst.id,
+                                          child: Text(inst.nome),
+                                        ))
+                                    .toList(),
+                                onChanged: _loadingInstituicoes
+                                    ? null
+                                    : (val) => _onInstituicaoChanged(val),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(30),
+                              topRight: Radius.circular(30),
                             ),
-                            Expanded(
-                              child: _loadingInstituicoes || _loadingInventarios
-                                  ? const Center(
-                                      child: CircularProgressIndicator(),
-                                    )
-                                  : _instituicaoSelecionadaId == null
-                                      ? Center(
-                                          child: Text(
-                                            'Selecione a Instituição',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 15,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 20),
+                                  child: Text(
+                                    'Inventários',
+                                    style: GoogleFonts.interTight(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _loadingInstituicoes ||
+                                          _loadingInventarios
+                                      ? const Center(
+                                          child: CircularProgressIndicator(),
                                         )
-                                      : _inventarios.isEmpty
+                                      : _instituicaoSelecionadaId == null
                                           ? Center(
                                               child: Text(
-                                                'Nenhum inventário encontrado para esta instituição.',
+                                                'Selecione a Instituição',
                                                 style: GoogleFonts.inter(
                                                   fontSize: 15,
                                                   color: Colors.grey[600],
                                                 ),
                                               ),
                                             )
-                                          : ListView.builder(
-                                              padding: EdgeInsets.zero,
-                                              itemCount: _inventarios.length,
-                                              itemBuilder: (context, index) {
-                                                final inventario =
-                                                    _inventarios[index];
-                                                return Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                    bottom: 15,
-                                                  ),
-                                                  child: _buildInventarioCard(
-                                                    inventario: inventario,
-                                                    titulo: inventario.nome,
-                                                    inicio: _formatarData(
-                                                      inventario.dataInicio,
-                                                    ),
-                                                    fim: _formatarData(
-                                                      inventario.dataFim,
+                                          : _inventarios.isEmpty
+                                              ? Center(
+                                                  child: Text(
+                                                    'Nenhum inventário encontrado para esta instituição.',
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 15,
+                                                      color: Colors.grey[600],
                                                     ),
                                                   ),
-                                                );
-                                              },
-                                            ),
+                                                )
+                                              : ListView.builder(
+                                                  padding: EdgeInsets.zero,
+                                                  itemCount:
+                                                      _inventarios.length,
+                                                  itemBuilder:
+                                                      (context, index) {
+                                                    final inventario =
+                                                        _inventarios[index];
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                        bottom: 15,
+                                                      ),
+                                                      child:
+                                                          _buildInventarioCard(
+                                                        inventario: inventario,
+                                                        titulo: inventario.nome,
+                                                        inicio: _formatarData(
+                                                          inventario.dataInicio,
+                                                        ),
+                                                        fim: _formatarData(
+                                                          inventario.dataFim,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const NavBarWidget(selectedIndex: 0),
+              ],
             ),
-            const NavBarWidget(selectedIndex: 0),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 
   // Widget auxiliar para construir o card de inventário e manter o build principal limpo
@@ -298,8 +309,8 @@ class _HomeViewState extends State<HomeView> {
             ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Icon(Icons.arrow_forward_ios,
-                  color: Colors.grey, size: 20),
+              child:
+                  Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 20),
             ),
           ],
         ),

@@ -25,7 +25,7 @@ class ImportarPlanilhaService {
         final dataInicio = row[3]?.value?.toString(); 
         final dataFim = row[4]?.value?.toString();
         
-        final patrimonioNumero = row[5]?.value?.toString()?.trim();
+        final patrimonioNumero = row[5]?.value?.toString().trim();
 
         if (patrimonioNumero != null && patrimonioNumero.isNotEmpty) {
           bool existe = await _patrimonioExiste(patrimonioNumero);
