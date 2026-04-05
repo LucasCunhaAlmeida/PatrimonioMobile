@@ -122,7 +122,7 @@ class _CadastroInstituicaoViewState extends State<CadastroInstituicaoView> {
                     TextFormField(
                       controller: _nomeInstituicaoController,
                       decoration:
-                          _inputDecoration('Digite o nome da instituição'),
+                          _inputDecoration('Ex: Departamento de Português'),
                     ),
                     const SizedBox(height: 30),
                     SizedBox(

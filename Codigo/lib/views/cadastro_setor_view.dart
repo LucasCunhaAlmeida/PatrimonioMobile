@@ -179,7 +179,7 @@ class _CadastrarSetorPageState extends State<CadastrarSetorPage> {
                           TextFormField(
                             controller: _nomeSetorController,
                             decoration:
-                                _inputDecoration('Digite o nome do setor'),
+                                _inputDecoration('Ex: Laborátorio de educação'),
                           ),
                           const SizedBox(height: 30),
                           SizedBox(

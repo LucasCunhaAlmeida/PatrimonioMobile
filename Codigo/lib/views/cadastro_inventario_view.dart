@@ -211,7 +211,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
                           TextFormField(
                             controller: _nomeInventarioController,
                             decoration:
-                                _inputDecoration('Digite o nome do inventário'),
+                                _inputDecoration('Ex: Patrimônio anual'),
                           ),
                           const SizedBox(height: 20),
                           Row(

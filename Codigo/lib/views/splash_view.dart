@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'home_view.dart'; // Import correto da sua Home
-import '../services/database_helper.dart'; // Import do seu helper de banco
+import 'home_view.dart'; 
+import '../services/database_helper.dart'; 
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
