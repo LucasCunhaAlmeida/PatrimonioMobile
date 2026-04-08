@@ -65,6 +65,25 @@ class DatabaseHelper {
     ''');
   }
 
+  Future<List<Map<String, dynamic>>> getRelatorioExcelPorId(int idInventario) async {
+    final db = await instance.database;
+
+    return await db.rawQuery('''
+    SELECT 
+      inst.nome AS instituicao,
+      s.nome AS setor,
+      inv.nome AS inventario,
+      inv.dataInicio AS dataInicio,
+      inv.dataFim AS dataFim,
+      p.numero AS patrimonio
+    FROM patrimonio_inventariado p
+    INNER JOIN setores s ON p.idSetor = s.id
+    INNER JOIN inventarios inv ON p.idInventario = inv.id
+    INNER JOIN instituicoes inst ON inv.idInstituicao = inst.id
+    WHERE p.idInventario = ?
+  ''', [idInventario]);
+  }
+
   Future<List<Map<String, dynamic>>> getRelatorioExcel() async {
     final db = await instance.database;
 
