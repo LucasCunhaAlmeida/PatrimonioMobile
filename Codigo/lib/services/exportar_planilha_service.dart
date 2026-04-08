@@ -73,19 +73,4 @@ class ExportarPlanilhaService {
 
     return fullPath;
   }
-
-  Future<String> gerarRelatorioGeral(String nomeArquivo) async{
-
-    var excel = Excel.createExcel();
-    String defaultSheet = excel.getDefaultSheet()!;
-    excel.rename(defaultSheet, 'Relatório de Patrimônio');
-    Sheet sheetObject = excel['Relatório de Patrimônio'];
-
-     List<int>? fileBytes = excel.save();
-    final directory = await getApplicationDocumentsDirectory();
-    final fullPath = p.join(directory.path, "$nomeArquivo.xlsx");
-    await File(fullPath).writeAsBytes(fileBytes!);
-
-    return fullPath;
-  }
 }
