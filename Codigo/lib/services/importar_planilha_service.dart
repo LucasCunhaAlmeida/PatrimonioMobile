@@ -1,16 +1,18 @@
-import 'package:excel/excel.dart';
 import 'dart:io';
+import 'package:excel/excel.dart';
+import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
-import 'package:patrimonio_mobile/services/patrimonioInventariado_service.dart';
 import 'package:patrimonio_mobile/models/patrimonioInventariado_model.dart';
+import 'package:patrimonio_mobile/services/patrimonioInventariado_service.dart';
 
 class ImportarPlanilhaService {
   final dbHelper = DatabaseHelper.instance;
+  final _patrimonioService = PatrimonioInventariadoService();
 
-  Future<int> importarParaContexto(String caminhoArquivo, int idInventario, int idSetor) async {
+  Future<int> importarPlanilha(String caminhoArquivo) async {
     var bytes = File(caminhoArquivo).readAsBytesSync();
     var excel = Excel.decodeBytes(bytes);
-    int importados = 0;
+    int totalProcessados = 0;
 
     for (var table in excel.tables.keys) {
       var sheet = excel.tables[table];
@@ -18,39 +20,103 @@ class ImportarPlanilhaService {
 
       for (int i = 1; i < sheet.maxRows; i++) {
         var row = sheet.rows[i];
-        if (row.isEmpty) continue;
+        if (row.isEmpty || row[0] == null) continue;
 
-        final patrimonioNumero = row.last?.value?.toString().trim();
+        try {
+          final nomeInstituicao = row[0]?.value?.toString().trim();
+          final nomeSetor = row[1]?.value?.toString().trim();
+          final nomeInventario = row[2]?.value?.toString().trim();
+          final dataInicio = row[3]?.value?.toString().trim();
+          final dataFim = row[4]?.value?.toString().trim();
+          final numeroPatrimonio = row[5]?.value?.toString().trim();
 
-        if (patrimonioNumero != null && patrimonioNumero.isNotEmpty) {
-          bool existe = await _patrimonioExisteNoInventario(patrimonioNumero, idInventario);
+          if (nomeInstituicao == null || numeroPatrimonio == null) continue;
+
+          int idInst = await _obterOuCriarInstituicao(nomeInstituicao);
+
+          int idSetor = await _obterOuCriarSetor(nomeSetor ?? "Setor Geral", idInst);
+
+          int idInv = await _obterOuCriarInventario(
+            nomeInventario ?? "Novo Inventário", 
+            idInst, 
+            dataInicio, 
+            dataFim
+          );
+
+          await _upsertPatrimonio(numeroPatrimonio, idInv, idSetor);
           
-          if (!existe) {
-            await _salvarNoBanco(patrimonioNumero, idInventario, idSetor);
-            importados++;
-          }
+          totalProcessados++;
+        } catch (e) {
+          print("Erro ao processar linha $i: $e");
         }
       }
     }
-    return importados;
+    return totalProcessados;
   }
 
-  Future<void> _salvarNoBanco(String numero, int idInv, int idSetor) async {
-    final patrimonioService = PatrimonioInventariadoService();
-    await patrimonioService.inserirPatrimonio(PatrimonioInventariado(
-      numero: numero,
-      idSetor: idSetor,
-      idInventario: idInv,
-    ));
-  }
-
-  Future<bool> _patrimonioExisteNoInventario(String numero, int idInv) async {
+  Future<int> _obterOuCriarInstituicao(String nome) async {
     final db = await dbHelper.database;
-    final res = await db.query(
-      'PatrimonioInventariado',
-      where: 'numero = ? AND idInventario = ?',
-      whereArgs: [numero, idInv],
+    var res = await db.query('Instituicao', where: 'nome = ?', whereArgs: [nome]);
+    
+    if (res.isNotEmpty) {
+      return res.first['id'] as int;
+    } else {
+      return await db.insert('Instituicao', {'nome': nome});
+    }
+  }
+
+  Future<int> _obterOuCriarSetor(String nome, int idInst) async {
+    final db = await dbHelper.database;
+    var res = await db.query('Setor', 
+      where: 'nome = ? AND idInstituicao = ?', 
+      whereArgs: [nome, idInst]
     );
-    return res.isNotEmpty;
+
+    if (res.isNotEmpty) {
+      return res.first['id'] as int;
+    } else {
+      return await db.insert('Setor', {'nome': nome, 'idInstituicao': idInst});
+    }
+  }
+
+  Future<int> _obterOuCriarInventario(String nome, int idInst, String? inicio, String? fim) async {
+    final db = await dbHelper.database;
+    var res = await db.query('Inventario', 
+      where: 'nome = ? AND idInstituicao = ?', 
+      whereArgs: [nome, idInst]
+    );
+
+    if (res.isNotEmpty) {
+      return res.first['id'] as int;
+    } else {
+      return await db.insert('Inventario', {
+        'nome': nome,
+        'dataInicio': inicio,
+        'dataFim': fim,
+        'idInstituicao': idInst
+      });
+    }
+  }
+
+  Future<void> _upsertPatrimonio(String numero, int idInv, int idSetor) async {
+    final db = await dbHelper.database;
+    
+    var res = await db.query('PatrimonioInventariado', 
+      where: 'numero = ? AND idInventario = ?', 
+      whereArgs: [numero, idInv]
+    );
+
+    if (res.isEmpty) {
+      await _patrimonioService.inserirPatrimonio(PatrimonioInventariado(
+        numero: numero,
+        idInventario: idInv,
+        idSetor: idSetor,
+      ));
+    } else {
+      var pExistente = PatrimonioInventariado.fromMap(res.first);
+      pExistente.idSetor = idSetor;
+      
+      await _patrimonioService.atualizarPatrimonio(pExistente);
+    }
   }
 }

@@ -1,8 +1,8 @@
 class PatrimonioInventariado {
   final int? id;
   String numero;
-  final int idInventario;
-  final int idSetor;
+  int idInventario;
+  int idSetor;
 
   PatrimonioInventariado({
     this.id,

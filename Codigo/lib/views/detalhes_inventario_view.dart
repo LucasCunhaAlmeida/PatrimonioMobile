@@ -7,10 +7,8 @@ import 'package:patrimonio_mobile/services/patrimonioInventariado_service.dart';
 import 'package:patrimonio_mobile/services/setor_service.dart';
 import 'package:patrimonio_mobile/views/scanner_view.dart';
 import 'package:patrimonio_mobile/services/exportar_planilha_service.dart';
-import 'package:patrimonio_mobile/services/importar_planilha_service.dart';
 import '/widgets/custom_navbar.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:file_picker/file_picker.dart';
 
 class DetalhesInventarioView extends StatefulWidget {
   final Inventario inventario;
@@ -79,7 +77,6 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
     try {
       final service = ExportarPlanilhaService();
 
-      // Remove espaços para evitar problemas em alguns sistemas
       String nomeSanitizado = widget.inventario.nome.replaceAll(' ', '_');
       String nomeArquivo = "Relatorio_$nomeSanitizado";
 
@@ -105,49 +102,6 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao exportar: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _processando = false);
-    }
-  }
-
-  Future<void> _importarPlanilha() async {
-    if (_setorSelecionadoId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor, selecione um setor primeiro!')),
-      );
-      return;
-    }
-
-    setState(() => _processando = true);
-
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['xlsx'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        final service = ImportarPlanilhaService();
-
-        int total = await service.importarParaContexto(
-          result.files.single.path!,
-          widget.inventario.id!,
-          _setorSelecionadoId!,
-        );
-
-        await _loadPatrimonios(_setorSelecionadoId!);
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$total novos patrimônios importados!')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro na importação: $e')),
       );
     } finally {
       if (mounted) setState(() => _processando = false);
@@ -255,7 +209,7 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                 ? const Center(
                                     child: CircularProgressIndicator())
                                 : DropdownButtonFormField<int>(
-                                    initialValue: _setorSelecionadoId,
+                                    value: _setorSelecionadoId,
                                     decoration: InputDecoration(
                                       filled: true,
                                       fillColor: Colors.white,
@@ -281,46 +235,36 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: _processando ? null : _importarPlanilha,
-                                    icon:
-                                        const Icon(Icons.upload_file, size: 18),
+                                  child: ElevatedButton.icon(
+                                    onPressed: (_processando ||
+                                            _setorSelecionadoId == null)
+                                        ? null
+                                        : _exportarPlanilha,
+                                    icon: _processando
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.upload_file,
+                                            size: 18, color: Colors.white),
                                     label: Text(
-                                      "Importar Patrimônio",
-                                      style: GoogleFonts.inter(fontSize: 13),
+                                      "Exportar Inventário",
+                                      style: GoogleFonts.inter(
+                                          fontSize: 18, color: Colors.white),
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF57636C),
-                                      side: const BorderSide(
-                                          color: Color(0xFFE0E3E7)),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF0055FF),
+                                      minimumSize: const Size(0, 50),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: _exportarPlanilha,
-                                    icon: const Icon(Icons.download, size: 18),
-                                    label: Text(
-                                      "Exportar Patrimônio",
-                                      style: GoogleFonts.inter(fontSize: 13),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF57636C),
-                                      side: const BorderSide(
-                                          color: Color(0xFFE0E3E7)),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
+                                      disabledBackgroundColor: Colors.grey,
+                                      elevation: 2,
                                     ),
                                   ),
                                 ),

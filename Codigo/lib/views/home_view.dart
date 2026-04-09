@@ -5,6 +5,8 @@ import 'package:patrimonio_mobile/models/inventario_model.dart';
 import 'package:patrimonio_mobile/services/instituicao_service.dart';
 import 'package:patrimonio_mobile/services/inventario_service.dart';
 import 'package:patrimonio_mobile/views/detalhes_inventario_view.dart';
+import 'package:patrimonio_mobile/services/importar_planilha_service.dart'; 
+import 'package:file_picker/file_picker.dart';
 import '/widgets/custom_navbar.dart';
 
 class HomeView extends StatefulWidget {
@@ -17,12 +19,14 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   final _instituicaoService = InstituicaoService();
   final _inventarioService = InventarioService();
+  final _importarService = ImportarPlanilhaService();
 
   List<Instituicao> _instituicoes = [];
   List<Inventario> _inventarios = [];
   int? _instituicaoSelecionadaId;
   bool _loadingInstituicoes = true;
   bool _loadingInventarios = false;
+  bool _processandoImportacao = false;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -32,286 +36,261 @@ class _HomeViewState extends State<HomeView> {
     _carregarInstituicoes();
   }
 
+  Future<void> _carregarInstituicoes() async {
+    setState(() => _loadingInstituicoes = true);
+    final lista = await _instituicaoService.queryAllInstituicoes();
+    setState(() {
+      _instituicoes = lista;
+      _loadingInstituicoes = false;
+    });
+    if (lista.length == 1) {
+      await _onInstituicaoChanged(lista.first.id);
+    }
+  }
+
   Future<void> _onInstituicaoChanged(int? idInstituicao) async {
     setState(() {
       _instituicaoSelecionadaId = idInstituicao;
       _inventarios = [];
       _loadingInventarios = idInstituicao != null;
     });
+    if (idInstituicao == null) return;
 
-    if (idInstituicao == null) {
-      return;
-    }
-
-    final inventarios = await _inventarioService.queryInventariosByInstituicao(
-      idInstituicao,
-    );
-
+    final inventarios = await _inventarioService.queryInventariosByInstituicao(idInstituicao);
     if (!mounted) return;
-
     setState(() {
       _inventarios = inventarios;
       _loadingInventarios = false;
     });
   }
 
-  Future<void> _carregarInstituicoes() async {
-    setState(() => _loadingInstituicoes = true);
+  Future<void> _importarInventario() async {
+    
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'],
+      );
 
-    final lista = await _instituicaoService.queryAllInstituicoes();
+      if (result != null && result.files.single.path != null) {
+        setState(() => _processandoImportacao = true);
 
-    setState(() {
-      _instituicoes = lista;
-      _loadingInstituicoes = false;
-    });
+        int total = await _importarService.importarPlanilha(result.files.single.path!);
 
-    if (lista.length == 1) {
-      final idUnico = lista.first.id;
+        await _carregarInstituicoes();
+      
+        if (_instituicaoSelecionadaId != null) {
+          await _onInstituicaoChanged(_instituicaoSelecionadaId);
+        }
 
-      await _onInstituicaoChanged(idUnico);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$total registros processados com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erro ao importar: Verifique o formato da planilha.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _processandoImportacao = false);
     }
   }
 
-  String _formatarData(String data) {
+  String _formatarData(String? data) {
+    if (data == null || data.isEmpty) return 'N/A';
     final partes = data.split('-');
-    if (partes.length == 3) {
-      return '${partes[2]}/${partes[1]}/${partes[0]}';
-    }
+    if (partes.length == 3) return '${partes[2]}/${partes[1]}/${partes[0]}';
     return data;
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-          FocusManager.instance.primaryFocus?.unfocus();
-        },
-        child: Scaffold(
-          key: scaffoldKey,
-          backgroundColor: const Color(0xFFF1F4F8), // Cor de fundo padrão
-          body: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        height: 130,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEFF0F6),
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        key: scaffoldKey,
+        backgroundColor: const Color(0xFFF1F4F8),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                height: 130,
+                color: const Color(0xFFEFF0F6),
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 30, 20, 0),
+                child: Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Instituição',
+                        style: GoogleFonts.interTight(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
                         ),
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                              20, 30, 20, 0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.max,
+                      ),
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: _instituicaoSelecionadaId,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0x9A57636C)),
+                        ),
+                      ),
+                      hint: const Text('Selecione a Instituição'),
+                      items: _instituicoes
+                          .map((inst) => DropdownMenuItem<int>(
+                                value: inst.id,
+                                child: Text(inst.nome),
+                              ))
+                          .toList(),
+                      onChanged: _loadingInstituicoes ? null : _onInstituicaoChanged,
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Align(
-                                alignment: const AlignmentDirectional(-1, 0),
-                                child: Text(
-                                  'Instituição',
-                                  style: GoogleFonts.interTight(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey[600],
-                                  ),
+                              Text(
+                                'Inventários',
+                                style: GoogleFonts.interTight(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[700],
                                 ),
                               ),
-                              DropdownButtonFormField<int>(
-                                value: _instituicaoSelecionadaId,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  hintText: 'Ex: INSTITUIÇÃO B',
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                        color: Color(0x9A57636C)),
-                                  ),
+                              ElevatedButton.icon(
+                                onPressed: _processandoImportacao ? null : _importarInventario,
+                                icon: _processandoImportacao
+                                    ? const SizedBox(
+                                        width: 15,
+                                        height: 15,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : const Icon(Icons.download, size: 18, color: Colors.white),
+                                label: Text(
+                                  _processandoImportacao ? 'Aguarde...' : 'Importar Planilha',
+                                  style: GoogleFonts.inter(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600),
                                 ),
-                                hint: const Text('Selecione a Instituição'),
-                                items: _instituicoes
-                                    .map((inst) => DropdownMenuItem<int>(
-                                          value: inst.id,
-                                          child: Text(inst.nome),
-                                        ))
-                                    .toList(),
-                                onChanged: _loadingInstituicoes
-                                    ? null
-                                    : (val) => _onInstituicaoChanged(val),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0055FF),
+                                  minimumSize: const Size(100, 38),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  elevation: 0,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          width: double.infinity,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(30),
-                              topRight: Radius.circular(30),
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 20),
-                                  child: Text(
-                                    'Inventários',
-                                    style: GoogleFonts.interTight(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _loadingInstituicoes ||
-                                          _loadingInventarios
-                                      ? const Center(
-                                          child: CircularProgressIndicator(),
-                                        )
-                                      : _instituicaoSelecionadaId == null
-                                          ? Center(
-                                              child: Text(
-                                                'Selecione a Instituição',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 15,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                            )
-                                          : _inventarios.isEmpty
-                                              ? Center(
-                                                  child: Text(
-                                                    'Nenhum inventário encontrado para esta instituição.',
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 15,
-                                                      color: Colors.grey[600],
-                                                    ),
-                                                  ),
-                                                )
-                                              : ListView.builder(
-                                                  padding: EdgeInsets.zero,
-                                                  itemCount:
-                                                      _inventarios.length,
-                                                  itemBuilder:
-                                                      (context, index) {
-                                                    final inventario =
-                                                        _inventarios[index];
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                        bottom: 15,
-                                                      ),
-                                                      child:
-                                                          _buildInventarioCard(
-                                                        inventario: inventario,
-                                                        titulo: inventario.nome,
-                                                        inicio: _formatarData(
-                                                          inventario.dataInicio,
-                                                        ),
-                                                        fim: _formatarData(
-                                                          inventario.dataFim,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                        Expanded(child: _buildListaConteudo()),
+                      ],
+                    ),
                   ),
                 ),
-                const NavBarWidget(selectedIndex: 0),
-              ],
-            ),
+              ),
+              const NavBarWidget(selectedIndex: 0),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 
-  // Widget auxiliar para construir o card de inventário e manter o build principal limpo
-  Widget _buildInventarioCard(
-      {required Inventario inventario,
-      required String titulo,
-      required String inicio,
-      required String fim}) {
+  Widget _buildListaConteudo() {
+    if (_loadingInstituicoes || _loadingInventarios) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_instituicaoSelecionadaId == null) {
+      return Center(
+        child: Text('Selecione uma instituição', style: GoogleFonts.inter(fontSize: 15, color: Colors.grey[600])),
+      );
+    }
+    if (_inventarios.isEmpty) {
+      return Center(
+        child: Text('Nenhum inventário encontrado.', style: GoogleFonts.inter(fontSize: 15, color: Colors.grey[600])),
+      );
+    }
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: _inventarios.length,
+      itemBuilder: (context, index) {
+        final inv = _inventarios[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 15),
+          child: _buildInventarioCard(
+            inventario: inv,
+            titulo: inv.nome,
+            inicio: _formatarData(inv.dataInicio),
+            fim: _formatarData(inv.dataFim),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInventarioCard({required Inventario inventario, required String titulo, required String inicio, required String fim}) {
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
-                DetalhesInventarioView(inventario: inventario),
-          ),
+          MaterialPageRoute(builder: (context) => DetalhesInventarioView(inventario: inventario)),
         );
       },
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: 100,
-        height: 80,
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
-            BoxShadow(
-              blurRadius: 5,
-              color: Colors.black.withOpacity(0.1),
-              offset: const Offset(0, 2),
-            )
+            BoxShadow(blurRadius: 5, color: Colors.black.withOpacity(0.05), offset: const Offset(0, 2)),
           ],
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFF1F4F8)),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Icon(Icons.edit_calendar_rounded,
-                  color: Color(0xFF0055FF), size: 40),
-            ),
+            const Icon(Icons.edit_calendar_rounded, color: Color(0xFF0055FF), size: 35),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    titulo,
-                    style: GoogleFonts.interTight(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  Row(
-                    children: [
-                      Text('Início: $inicio',
-                          style: const TextStyle(fontSize: 12)),
-                      const Text(' | ', style: TextStyle(fontSize: 12)),
-                      Text('Fim: $fim', style: const TextStyle(fontSize: 12)),
-                    ],
-                  ),
+                  Text(titulo, style: GoogleFonts.interTight(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text('Início: $inicio | Fim: $fim', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child:
-                  Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 20),
-            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
           ],
         ),
       ),
