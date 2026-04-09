@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:patrimonio_mobile/views/arquivos_view.dart';
 import 'package:patrimonio_mobile/views/cadastro_view.dart';
 import 'package:patrimonio_mobile/views/home_view.dart';
 
@@ -22,9 +21,6 @@ class NavBarWidget extends StatelessWidget {
         break;
       case 1:
         destination = const CadastroView();
-        break;
-      case 2:
-        destination = const ArquivosView();
         break;
       default:
         destination = const HomeView();
@@ -50,7 +46,7 @@ class NavBarWidget extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       onTap: () => _navigateTo(context, index),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -89,7 +85,7 @@ class NavBarWidget extends StatelessWidget {
           BoxShadow(
             blurRadius: 1,
             color: corSombra,
-            offset: const Offset(0, 1),
+            offset: const Offset(0, -1),
           )
         ],
         borderRadius: const BorderRadius.only(
@@ -100,10 +96,10 @@ class NavBarWidget extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10), 
+          padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
             mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildNavItem(
                 context,
@@ -118,14 +114,6 @@ class NavBarWidget extends StatelessWidget {
                 index: 1,
                 icon: Icons.add_sharp,
                 label: 'Cadastrar',
-                defaultColor: corIconeTexto,
-                activeColor: corAtiva,
-              ),
-              _buildNavItem(
-                context,
-                index: 2,
-                icon: Icons.menu,
-                label: 'Arquivos',
                 defaultColor: corIconeTexto,
                 activeColor: corAtiva,
               ),

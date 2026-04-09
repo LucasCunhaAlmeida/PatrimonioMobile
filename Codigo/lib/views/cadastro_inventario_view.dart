@@ -153,7 +153,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Cadastrar Inventario',
+                    'Cadastrar Inventário',
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -175,7 +175,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
                     : ListView(
                         children: [
                           Text(
-                            'Instituicao',
+                            'Instituição',
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -200,7 +200,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            'Nome do Inventario',
+                            'Nome do Inventário',
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -268,7 +268,7 @@ class _CadastrarInventarioPageState extends State<CadastrarInventarioPage> {
                                     const EdgeInsets.symmetric(vertical: 16),
                               ),
                               child: const Text(
-                                'Salvar Inventario',
+                                'Salvar Inventário',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,

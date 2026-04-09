@@ -67,9 +67,9 @@ class _InventarioViewState extends State<InventarioView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Excluir inventario'),
+        title: const Text('Excluir inventário'),
         content: Text(
-          'Tem certeza que deseja excluir o inventario "${inventario.nome}"?',
+          'Tem certeza que deseja excluir o inventário "${inventario.nome}"?',
         ),
         actions: [
           TextButton(
@@ -102,7 +102,7 @@ class _InventarioViewState extends State<InventarioView> {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Editar inventario'),
+        title: const Text('Editar inventário'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -277,7 +277,7 @@ class _InventarioViewState extends State<InventarioView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Inventarios',
+          'Inventários',
           style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             color: const Color(0xFF57636C),

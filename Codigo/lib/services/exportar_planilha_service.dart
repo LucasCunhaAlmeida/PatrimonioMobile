@@ -5,9 +5,9 @@ import 'dart:io';
 import 'database_helper.dart';
 
 class ExportarPlanilhaService {
-  Future<String> gerarRelatorioGeral(String nomeArquivo) async {
+  Future<String> gerarRelatorioPorInventario(int idInventario, String nomeArquivo) async {
     final List<Map<String, dynamic>> dadosBanco =
-        await DatabaseHelper.instance.getRelatorioExcel();
+        await DatabaseHelper.instance.getRelatorioExcelPorId(idInventario);
 
     var excel = Excel.createExcel();
     String defaultSheet = excel.getDefaultSheet()!;
@@ -34,11 +34,9 @@ class ExportarPlanilhaService {
     for (var row in dadosBanco) {
       String instAtual = row['instituicao']?.toString() ?? "";
       String setorAtual = row['setor']?.toString() ?? "";
-      String invAtual = row['inventario']?.toString().trim() ?? "";
-
+      String invAtual = row['inventario']?.toString() ?? "";
       String dataInicio = row['dataInicio']?.toString() ?? "";
       String dataFim = row['dataFim']?.toString() ?? "";
-      
       String patAtual = row['patrimonio']?.toString() ?? "";
 
       sheetObject

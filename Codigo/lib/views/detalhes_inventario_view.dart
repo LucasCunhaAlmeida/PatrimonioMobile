@@ -6,7 +6,9 @@ import 'package:patrimonio_mobile/models/setor_model.dart';
 import 'package:patrimonio_mobile/services/patrimonioInventariado_service.dart';
 import 'package:patrimonio_mobile/services/setor_service.dart';
 import 'package:patrimonio_mobile/views/scanner_view.dart';
+import 'package:patrimonio_mobile/services/exportar_planilha_service.dart';
 import '/widgets/custom_navbar.dart';
+import 'package:share_plus/share_plus.dart';
 
 class DetalhesInventarioView extends StatefulWidget {
   final Inventario inventario;
@@ -19,6 +21,7 @@ class DetalhesInventarioView extends StatefulWidget {
 class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
   final _setorService = SetorService();
   final _patrimonioService = PatrimonioInventariadoService();
+  bool _processando = false;
 
   List<Setor> _setores = [];
   List<PatrimonioInventariado> _patrimonios = [];
@@ -67,6 +70,42 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
       _patrimonios = lista;
       _loadingPatrimonios = false;
     });
+  }
+
+  Future<void> _exportarPlanilha() async {
+    setState(() => _processando = true);
+    try {
+      final service = ExportarPlanilhaService();
+
+      String nomeSanitizado = widget.inventario.nome.replaceAll(' ', '_');
+      String nomeArquivo = "Relatorio_$nomeSanitizado";
+
+      final caminho = await service.gerarRelatorioPorInventario(
+          widget.inventario.id!, nomeArquivo);
+
+      final box = context.findRenderObject() as RenderBox?;
+      final posicao =
+          box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+
+      await Share.shareXFiles(
+        [XFile(caminho)],
+        text: 'Segue a planilha do inventário: ${widget.inventario.nome}',
+        sharePositionOrigin: posicao,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Planilha "$nomeArquivo" exportada com sucesso!')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao exportar: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _processando = false);
+    }
   }
 
   String _formatarData(String data) {
@@ -170,7 +209,7 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                 ? const Center(
                                     child: CircularProgressIndicator())
                                 : DropdownButtonFormField<int>(
-                                    initialValue: _setorSelecionadoId,
+                                    value: _setorSelecionadoId,
                                     decoration: InputDecoration(
                                       filled: true,
                                       fillColor: Colors.white,
@@ -192,6 +231,39 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                         .toList(),
                                     onChanged: _onSetorChanged,
                                   ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: (_processando ||
+                                      _setorSelecionadoId == null)
+                                  ? null
+                                  : _exportarPlanilha,
+                              icon: _processando
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.upload_file,
+                                      size: 22, color: Colors.white),
+                              label: Text(
+                                "Exportar Inventário",
+                                style: GoogleFonts.inter(
+                                    fontSize: 18, color: Colors.white),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0055FF),
+                                minimumSize: const Size(double.infinity, 50),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                disabledBackgroundColor: Colors.grey,
+                              ),
+                            ),
                             const SizedBox(height: 20),
                             Text(
                               'Patrimônios do setor',
@@ -217,7 +289,6 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                           ),
                                         ).then((_) {
                                           if (!mounted) return;
-
                                           if (_setorSelecionadoId != null) {
                                             _loadPatrimonios(
                                                 _setorSelecionadoId!);
@@ -225,13 +296,14 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                         });
                                       },
                                 icon: const Icon(Icons.camera_alt,
-                                    color: Colors.white),
-                                label: const Text('Adicionar patrimônio',
-                                    style: TextStyle(
+                                    size: 22, color: Colors.white),
+                                label: Text('Adicionar patrimônio',
+                                    style: GoogleFonts.inter(
                                         color: Colors.white, fontSize: 18)),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF0055FF),
                                   minimumSize: const Size(double.infinity, 50),
+                                  elevation: 0,
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12)),
                                   disabledBackgroundColor: Colors.grey,
@@ -302,15 +374,14 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
           Expanded(
             child: Text(
               p.numero,
-              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w500),
+              style:
+                  GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w500),
             ),
           ),
-          // Botão de Editar (Canetinha)
           IconButton(
             icon: const Icon(Icons.edit, color: Color(0xFF0055FF), size: 24),
             onPressed: () => _mostrarDialogoEditar(p),
           ),
-          // Botão de Excluir (Lixeira)
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.red, size: 24),
             onPressed: () => _mostrarDialogoDeletar(p),
@@ -327,59 +398,62 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
     await showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: Text('Editar Patrimônio', style: GoogleFonts.interTight(fontWeight: FontWeight.w600)),
-              content: isLoading
-                  ? const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
-                  : TextField(
-                      controller: controller,
-                      keyboardType: TextInputType.number,
-                      maxLength: 10,
-                      decoration: const InputDecoration(
-                        labelText: 'Número do Patrimônio',
-                        border: OutlineInputBorder(),
-                      ),
+        return StatefulBuilder(builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: Text('Editar Patrimônio',
+                style: GoogleFonts.interTight(fontWeight: FontWeight.w600)),
+            content: isLoading
+                ? const SizedBox(
+                    height: 50,
+                    child: Center(child: CircularProgressIndicator()))
+                : TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    maxLength: 10,
+                    decoration: const InputDecoration(
+                      labelText: 'Número do Patrimônio',
+                      border: OutlineInputBorder(),
                     ),
-              actions: [
-                TextButton(
-                  onPressed: isLoading ? null : () => Navigator.pop(context),
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-                ),
-                TextButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          if (controller.text.trim().isEmpty) return;
-                          
-                          setStateDialog(() => isLoading = true);
-                          
-                          try {
-                            p.numero = controller.text.trim();
-                            // Vai funcionar perfeitamente agora que o model não é final e o Service foi salvo
-                            await _patrimonioService.atualizarPatrimonio(p);
-                            
-                            if (mounted) {
-                              Navigator.pop(context); // Fecha o pop-up
-                              _loadPatrimonios(_setorSelecionadoId!); // Recarrega a lista
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Atualizado com sucesso!')),
-                              );
-                            }
-                          } catch (e) {
-                            setStateDialog(() => isLoading = false);
+                  ),
+            actions: [
+              TextButton(
+                onPressed: isLoading ? null : () => Navigator.pop(context),
+                child: const Text('Cancelar',
+                    style: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        if (controller.text.trim().isEmpty) return;
+
+                        setStateDialog(() => isLoading = true);
+
+                        try {
+                          p.numero = controller.text.trim();
+                          await _patrimonioService.atualizarPatrimonio(p);
+
+                          if (mounted) {
+                            Navigator.pop(context);
+                            _loadPatrimonios(_setorSelecionadoId!);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Erro ao atualizar: $e')),
+                              const SnackBar(
+                                  content: Text('Atualizado com sucesso!')),
                             );
                           }
-                        },
-                  child: const Text('Salvar', style: TextStyle(color: Color(0xFF0055FF))),
-                ),
-              ],
-            );
-          }
-        );
+                        } catch (e) {
+                          setStateDialog(() => isLoading = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Erro ao atualizar: $e')),
+                          );
+                        }
+                      },
+                child: const Text('Salvar',
+                    style: TextStyle(color: Color(0xFF0055FF))),
+              ),
+            ],
+          );
+        });
       },
     );
   }
@@ -390,47 +464,51 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
     await showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: Text('Excluir Patrimônio', style: GoogleFonts.interTight(fontWeight: FontWeight.w600)),
-              content: isLoading
-                  ? const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
-                  : Text('Tem certeza que deseja excluir o patrimônio "${p.numero}"? Essa ação não pode ser desfeita.'),
-              actions: [
-                TextButton(
-                  onPressed: isLoading ? null : () => Navigator.pop(context),
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-                ),
-                TextButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          setStateDialog(() => isLoading = true);
-                          try {
-                            await _patrimonioService.excluirPatrimonio(p.id!);
-                            
-                            if (mounted) {
-                              Navigator.pop(context); // Fecha o pop-up
-                              _loadPatrimonios(_setorSelecionadoId!); // Recarrega a lista
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Excluído com sucesso!')),
-                              );
-                            }
-                          } catch (e) {
-                            setStateDialog(() => isLoading = false);
+        return StatefulBuilder(builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: Text('Excluir Patrimônio',
+                style: GoogleFonts.interTight(fontWeight: FontWeight.w600)),
+            content: isLoading
+                ? const SizedBox(
+                    height: 50,
+                    child: Center(child: CircularProgressIndicator()))
+                : Text(
+                    'Tem certeza que deseja excluir o patrimônio "${p.numero}"? Essa ação não pode ser desfeita.'),
+            actions: [
+              TextButton(
+                onPressed: isLoading ? null : () => Navigator.pop(context),
+                child: const Text('Cancelar',
+                    style: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        setStateDialog(() => isLoading = true);
+                        try {
+                          await _patrimonioService.excluirPatrimonio(p.id!);
+
+                          if (mounted) {
+                            Navigator.pop(context);
+                            _loadPatrimonios(_setorSelecionadoId!);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Erro ao excluir: $e')),
+                              const SnackBar(
+                                  content: Text('Excluído com sucesso!')),
                             );
                           }
-                        },
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Excluir'),
-                ),
-              ],
-            );
-          }
-        );
+                        } catch (e) {
+                          setStateDialog(() => isLoading = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Erro ao excluir: $e')),
+                          );
+                        }
+                      },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Excluir'),
+              ),
+            ],
+          );
+        });
       },
     );
   }
