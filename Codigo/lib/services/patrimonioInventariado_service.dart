@@ -2,6 +2,15 @@ import 'package:sqflite/sqflite.dart';
 import 'package:patrimonio_mobile/models/patrimonioInventariado_model.dart';
 import 'package:patrimonio_mobile/services/database_helper.dart';
 
+class DuplicatePatrimonioException implements Exception {
+  final String message;
+
+  const DuplicatePatrimonioException([this.message = 'Já cadastrado']);
+
+  @override
+  String toString() => message;
+}
+
 class PatrimonioInventariadoService {
   final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
 
@@ -19,15 +28,16 @@ class PatrimonioInventariadoService {
     );
 
     if (patrimoniosExistentes.isNotEmpty) {
-      throw Exception("Já existe um patrimônio com o código ${ativo.numero} cadastrado neste inventário");
+      throw const DuplicatePatrimonioException();
     }
 
     return await db.insert('PatrimonioInventariado', ativo.toMap());
   }
 
-  Future<List<PatrimonioInventariado>> listarPatrimonio(int idSetor, int idInventario) async {
+  Future<List<PatrimonioInventariado>> listarPatrimonio(
+      int idSetor, int idInventario) async {
     Database db = await _databaseHelper.database;
-    
+
     final List<Map<String, dynamic>> result = await db.query(
       'PatrimonioInventariado',
       where: 'idSetor = ? AND idInventario = ?',
@@ -39,10 +49,10 @@ class PatrimonioInventariadoService {
 
   Future<int> atualizarPatrimonio(PatrimonioInventariado ativo) async {
     Database db = await _databaseHelper.database;
-    
+
     Map<String, dynamic> row = ativo.toMap();
-    int? id = row['id']; 
-    
+    int? id = row['id'];
+
     if (id == null) {
       throw Exception("Atualização falhou, ID não identificado");
     }
@@ -57,7 +67,7 @@ class PatrimonioInventariadoService {
 
   Future<int> excluirPatrimonio(int id) async {
     Database db = await _databaseHelper.database;
-    
+
     return await db.delete(
       'PatrimonioInventariado',
       where: 'id = ?',

@@ -117,7 +117,7 @@ class _InventarioViewState extends State<InventarioView> {
                 controller: dataInicioController,
                 readOnly: true,
                 decoration: const InputDecoration(
-                  labelText: 'Data inicio',
+                  labelText: 'Data início',
                   suffixIcon: Icon(Icons.calendar_today),
                 ),
                 onTap: () async {
@@ -294,7 +294,7 @@ class _InventarioViewState extends State<InventarioView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Instituicao',
+                  'Instituição',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
