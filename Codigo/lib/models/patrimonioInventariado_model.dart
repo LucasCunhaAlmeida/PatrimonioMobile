@@ -3,12 +3,16 @@ class PatrimonioInventariado {
   String numero;
   int idInventario;
   int idSetor;
+  String estadoPatrimonio;
+  String estadoConservacao;
 
   PatrimonioInventariado({
     this.id,
     required this.numero,
     required this.idInventario,
     required this.idSetor,
+    required this.estadoConservacao,
+    required this.estadoPatrimonio,
   });
 
   Map<String, dynamic> toMap() {
@@ -17,6 +21,8 @@ class PatrimonioInventariado {
       'numero': numero,
       'idInventario': idInventario,
       'idSetor': idSetor,
+      'estadoPatrimonio': estadoPatrimonio,
+      'estadoConservacao': estadoConservacao,
     };
   }
 
@@ -26,6 +32,8 @@ class PatrimonioInventariado {
       numero: map['numero'],
       idInventario: map['idInventario'],
       idSetor: map['idSetor'],
+      estadoPatrimonio: map['estadoPatrimonio'] as String,
+      estadoConservacao: map['estadoConservacao'] as String,
     );
   }
 }
