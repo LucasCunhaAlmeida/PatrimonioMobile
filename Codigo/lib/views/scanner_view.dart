@@ -28,36 +28,55 @@ class _ScannerViewState extends State<ScannerView> {
   bool _codigoValido(String codigo) =>
       RegExp(r'^\d{1,10}$').hasMatch(codigo.trim());
 
-  bool _ehDuplicado(Object erro) =>
-      erro is DuplicatePatrimonioException ||
-      erro.toString().toLowerCase().contains('já cadastrado') ||
-      erro.toString().toLowerCase().contains('ja cadastrado') ||
-      erro.toString().toLowerCase().contains('já existe') ||
-      erro.toString().toLowerCase().contains('ja existe') ||
-      erro.toString().toLowerCase().contains('duplicate');
-
   Future<void> _mostrarPopup({
     required String titulo,
     required String codigo,
     required Color cor,
     required IconData icone,
+    String? subtitulo,
+    double tamanhoTitulo = 20,
+    Future<void> Function(String estadoPatrimonio, String estadoConservacao)?
+        onSalvarEstados,
+    String textoBotaoCancelar = 'Voltar',
+    String textoBotaoSalvar = 'Salvar',
+    String? estadoInicialPatrimonio,
+    String? estadoInicialConservacao,
   }) async {
+    final exibeSeletoresEstado = onSalvarEstados != null;
+
+    final estadoPatrimonioNotifier =
+        ValueNotifier<String?>(estadoInicialPatrimonio);
+    final estadoConservacaoNotifier =
+        ValueNotifier<String?>(estadoInicialConservacao);
+
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Ícone com fundo colorido
+              if (subtitulo != null) ...[
+                Text(
+                  subtitulo,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+              ],
               Container(
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: cor.withOpacity(0.12),
+                  color: cor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icone, color: cor, size: 42),
@@ -66,14 +85,13 @@ class _ScannerViewState extends State<ScannerView> {
               Text(
                 titulo,
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: tamanhoTitulo,
                   fontWeight: FontWeight.bold,
                   color: cor,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              // Caixa com o código
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -92,24 +110,122 @@ class _ScannerViewState extends State<ScannerView> {
                 ),
               ),
               const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: cor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "OK",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              if (exibeSeletoresEstado) ...[
+                _buildSeletorOpcoes(
+                  label: "Estado do patrimônio",
+                  opcoes: const ["Em uso", "Defeituoso", "Ocioso"],
+                  notifier: estadoPatrimonioNotifier,
+                  centralizarOpcoes: true,
+                  centralizarLabel: true,
+                ),
+                const SizedBox(height: 14),
+                _buildSeletorOpcoes(
+                  label: "Estado de conservação",
+                  opcoes: const ["Ótimo", "Bom", "Regular", "Ruim"],
+                  notifier: estadoConservacaoNotifier,
+                  centralizarLabel: true,
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ValueListenableBuilder2(
+                    first: estadoPatrimonioNotifier,
+                    second: estadoConservacaoNotifier,
+                    builder: (context, estadoPatrimonio, estadoConservacao, _) {
+                      final podeSalvar =
+                          estadoPatrimonio != null && estadoConservacao != null;
+
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      podeSalvar ? cor : Colors.grey.shade400,
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10))),
+                              onPressed: podeSalvar
+                                  ? () async {
+                                      try {
+                                        await onSalvarEstados(
+                                          estadoPatrimonio,
+                                          estadoConservacao,
+                                        );
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content:
+                                                  Text('Erro ao salvar: $e'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    }
+                                  : null,
+                              child: Text(
+                                podeSalvar ? textoBotaoSalvar : "Salvar",
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.black87,
+                                side: BorderSide(color: Colors.grey.shade400),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                textoBotaoCancelar,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-              ),
+              ] else ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: cor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      "OK",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -117,8 +233,95 @@ class _ScannerViewState extends State<ScannerView> {
     );
   }
 
+  Widget _buildSeletorOpcoes({
+    required String label,
+    required List<String> opcoes,
+    required ValueNotifier<String?> notifier,
+    bool centralizarOpcoes = false,
+    bool centralizarLabel = false,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Align(
+          alignment: centralizarLabel ? Alignment.center : Alignment.centerLeft,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+            textAlign: centralizarLabel ? TextAlign.center : TextAlign.left,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ValueListenableBuilder<String?>(
+            valueListenable: notifier,
+            builder: (context, selecionado, _) {
+              final chips = opcoes.map((opcao) {
+                final estaSelecionado = selecionado == opcao;
+                return GestureDetector(
+                  onTap: () => notifier.value = opcao,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: estaSelecionado
+                          ? const Color(0xFF0055FF)
+                          : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: estaSelecionado
+                            ? const Color(0xFF0055FF)
+                            : Colors.grey.shade300,
+                      ),
+                    ),
+                    child: Text(
+                      opcao,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: estaSelecionado ? Colors.white : Colors.black54,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList();
+
+              if (centralizarOpcoes) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: chips
+                      .expand((chip) => [chip, const SizedBox(width: 8)])
+                      .toList()
+                    ..removeLast(),
+                );
+              }
+
+              return SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: chips
+                        .expand((chip) => [chip, const SizedBox(width: 10)])
+                        .toList()
+                      ..removeLast(),
+                  ),
+                ),
+              );
+            }),
+      ]),
+    );
+  }
+
   Future<void> _mostrarFalhaLeitura(String codigo) async {
-    if (_isProcessing) return;
+    if (!mounted || _isProcessing) return;
 
     setState(() => _isProcessing = true);
     scannerController.stop();
@@ -135,19 +338,20 @@ class _ScannerViewState extends State<ScannerView> {
         setState(() => _isProcessing = false);
       }
       await Future.delayed(_scannerRestartDelay);
+      if (!mounted) return;
       scannerController.start();
     }
   }
 
   Future<void> _salvarNoBanco(String codigo, {bool fromScanner = false}) async {
-    // Guard contra múltiplos disparos
-    if (_isProcessing) return;
+    if (!mounted || _isProcessing) return;
 
     final codigoLimpo = codigo.trim();
 
     if (!_codigoValido(codigoLimpo)) {
       if (fromScanner) {
-        await _mostrarFalhaLeitura(codigoLimpo.isEmpty ? "(vazio)" : codigoLimpo);
+        await _mostrarFalhaLeitura(
+            codigoLimpo.isEmpty ? "(vazio)" : codigoLimpo);
       } else {
         await _mostrarPopup(
           titulo: "Código inválido",
@@ -167,49 +371,70 @@ class _ScannerViewState extends State<ScannerView> {
         await player.play(AssetSource('sound/beep.mp3'));
       } catch (_) {}
 
-      final novoAtivo = PatrimonioInventariado(
-        numero: codigoLimpo,
-        idInventario: widget.idInventario,
-        idSetor: widget.idSetor,
+      final patrimonioExistente = await _service.buscarPatrimonio(
+        codigoLimpo,
+        widget.idInventario,
       );
 
-      await _service.inserirPatrimonio(novoAtivo);
-
-      await _mostrarPopup(
-        titulo: "Patrimônio salvo",
-        codigo: codigoLimpo,
-        cor: Colors.green,
-        icone: Icons.check_circle_rounded,
-      );
-    } on DuplicatePatrimonioException {
-      await _mostrarPopup(
-        titulo: "Patrimônio já cadastrado",
-        codigo: codigoLimpo,
-        cor: Colors.amber,
-        icone: Icons.warning_amber_rounded,
-      );
-    } catch (e) {
-      if (_ehDuplicado(e)) {
-        //tratar caso de duplicidade fora do padrão
+      if (patrimonioExistente == null) {
+        await _mostrarPopup(
+          titulo: "Novo Patrimônio",
+          tamanhoTitulo: 18,
+          codigo: codigoLimpo,
+          cor: Colors.green,
+          icone: Icons.qr_code_scanner_rounded,
+          subtitulo: "Confirmar Patrimônio?",
+          textoBotaoCancelar: 'Não',
+          textoBotaoSalvar: 'Salvar',
+          onSalvarEstados: (estadoPatrimonio, estadoConservacao) async {
+            await _service.inserirPatrimonio(
+              PatrimonioInventariado(
+                numero: codigoLimpo,
+                idInventario: widget.idInventario,
+                idSetor: widget.idSetor,
+                estadoPatrimonio: estadoPatrimonio,
+                estadoConservacao: estadoConservacao,
+              ),
+            );
+          },
+        );
+      } else {
         await _mostrarPopup(
           titulo: "Patrimônio já cadastrado",
           codigo: codigoLimpo,
           cor: Colors.amber,
           icone: Icons.warning_amber_rounded,
-        );
-      } else {
-        await _mostrarPopup(
-          titulo: "Erro ao salvar",
-          codigo: codigoLimpo,
-          cor: Colors.red,
-          icone: Icons.error_rounded,
+          textoBotaoCancelar: 'Voltar',
+          textoBotaoSalvar: 'Salvar',
+          estadoInicialPatrimonio: patrimonioExistente.estadoPatrimonio,
+          estadoInicialConservacao: patrimonioExistente.estadoConservacao,
+          onSalvarEstados: (estadoPatrimonio, estadoConservacao) async {
+            await _service.atualizarPatrimonio(
+              PatrimonioInventariado(
+                id: patrimonioExistente.id,
+                numero: codigoLimpo,
+                idInventario: widget.idInventario,
+                idSetor: widget.idSetor,
+                estadoPatrimonio: estadoPatrimonio,
+                estadoConservacao: estadoConservacao,
+              ),
+            );
+          },
         );
       }
+    } catch (e) {
+      await _mostrarPopup(
+        titulo: "Erro ao salvar",
+        codigo: codigoLimpo,
+        cor: Colors.red,
+        icone: Icons.error_rounded,
+      );
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);
       }
       await Future.delayed(_scannerRestartDelay);
+      if (!mounted) return;
       scannerController.start();
     }
   }
@@ -218,38 +443,118 @@ class _ScannerViewState extends State<ScannerView> {
     _manualController.clear();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Digitar Código"),
-        content: TextField(
-          controller: _manualController,
-          keyboardType: TextInputType.number,
-          maxLength: 10,
-          decoration: const InputDecoration(
-            hintText: "0000000000",
-            border: OutlineInputBorder(),
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.keyboard_alt_rounded,
+                  color: Colors.blue,
+                  size: 42,
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                "Digitar código",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _manualController,
+                keyboardType: TextInputType.number,
+                maxLength: 10,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: "0000000000",
+                  counterText: "",
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Colors.blue, width: 1.6),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.black87,
+                        side: BorderSide(color: Colors.grey.shade400),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        "Cancelar",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () {
+                        final txt = _manualController.text.trim();
+                        if (txt.isEmpty) return;
+                        Navigator.pop(context);
+                        _salvarNoBanco(txt);
+                      },
+                      child: const Text(
+                        "Salvar",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final txt = _manualController.text.trim();
-              if (txt.isEmpty) return;
-              Navigator.pop(context);
-              _salvarNoBanco(txt);
-            },
-            child: const Text("Salvar"),
-          ),
-        ],
       ),
     );
   }
 
-  //Mira com cantos
   Widget _buildMira() {
     const double width = 280;
     const double height = 160;
@@ -322,7 +627,6 @@ class _ScannerViewState extends State<ScannerView> {
       ),
       body: Stack(
         children: [
-          // Câmera
           MobileScanner(
             controller: scannerController,
             onDetect: (capture) async {
@@ -342,11 +646,7 @@ class _ScannerViewState extends State<ScannerView> {
               await _salvarNoBanco(rawValue, fromScanner: true);
             },
           ),
-
-          // Mira
           Center(child: _buildMira()),
-
-          // Instrução
           const Align(
             alignment: Alignment(0, 0.45),
             child: Text(
@@ -358,7 +658,6 @@ class _ScannerViewState extends State<ScannerView> {
               ),
             ),
           ),
-
           if (_isProcessing)
             Container(
               color: Colors.black54,
@@ -380,7 +679,32 @@ class _ScannerViewState extends State<ScannerView> {
   }
 }
 
-//Canto da mira
+class ValueListenableBuilder2<A, B> extends StatelessWidget {
+  final ValueNotifier<A> first;
+  final ValueNotifier<B> second;
+  final Widget Function(BuildContext, A, B, Widget?) builder;
+
+  const ValueListenableBuilder2({
+    super.key,
+    required this.first,
+    required this.second,
+    required this.builder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<A>(
+      valueListenable: first,
+      builder: (context, a, _) {
+        return ValueListenableBuilder<B>(
+          valueListenable: second,
+          builder: (context, b, child) => builder(context, a, b, child),
+        );
+      },
+    );
+  }
+}
+
 class _Corner extends StatelessWidget {
   final Color color;
   final double strokeWidth;

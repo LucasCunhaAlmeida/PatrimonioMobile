@@ -19,9 +19,10 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
-      onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON')
+      onUpgrade: _onUpgrade,
+      onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
   }
 
@@ -59,13 +60,50 @@ class DatabaseHelper {
         numero TEXT NOT NULL,
         idInventario INTEGER NOT NULL,
         idSetor INTEGER NOT NULL,
+        estadoPatrimonio TEXT,
+        estadoConservacao TEXT,
         FOREIGN KEY (idInventario) REFERENCES Inventario (id) ON DELETE CASCADE,
         FOREIGN KEY (idSetor) REFERENCES Setor (id) ON DELETE CASCADE
       )
     ''');
   }
 
-  Future<List<Map<String, dynamic>>> getRelatorioExcelPorId(int idInventario) async {
+  // Método para lidar com atualizações de versão do banco de dados
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _ensureColumnExists(
+        db,
+        table: 'PatrimonioInventariado',
+        column: 'estadoPatrimonio',
+        definition: 'TEXT',
+      );
+      await _ensureColumnExists(
+        db,
+        table: 'PatrimonioInventariado',
+        column: 'estadoConservacao',
+        definition: 'TEXT',
+      );
+    }
+  }
+
+  //Migração segura para adicionar colunas sem perder dados existentes
+  Future<void> _ensureColumnExists(
+    Database db, {
+    required String table,
+    required String column,
+    required String definition,
+  }) async {
+    final columns = await db.rawQuery('PRAGMA table_info($table)');
+    final exists = columns.any((c) => c['name'] == column);
+    if (!exists) {
+      await db.execute(
+        'ALTER TABLE $table ADD COLUMN $column $definition',
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRelatorioExcelPorId(
+      int idInventario) async {
     final db = await instance.database;
 
     return await db.rawQuery('''

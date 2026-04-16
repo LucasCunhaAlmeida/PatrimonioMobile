@@ -4,8 +4,13 @@ import 'package:patrimonio_mobile/services/database_helper.dart';
 
 class DuplicatePatrimonioException implements Exception {
   final String message;
+  final PatrimonioInventariado
+      patrimonioDuplicado; //retornar o registro existente
 
-  const DuplicatePatrimonioException([this.message = 'Já cadastrado']);
+  const DuplicatePatrimonioException({
+    this.message = 'Já cadastrado',
+    required this.patrimonioDuplicado,
+  });
 
   @override
   String toString() => message;
@@ -13,6 +18,23 @@ class DuplicatePatrimonioException implements Exception {
 
 class PatrimonioInventariadoService {
   final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
+
+  Future<PatrimonioInventariado?> buscarPatrimonio(
+    String numero,
+    int idInventario,
+  ) async {
+    final db = await _databaseHelper.database;
+
+    final result = await db.query(
+      'PatrimonioInventariado',
+      where: 'numero = ? AND idInventario = ?',
+      whereArgs: [numero, idInventario],
+      limit: 1,
+    );
+
+    if (result.isEmpty) return null;
+    return PatrimonioInventariado.fromMap(result.first);
+  }
 
   Future<int> inserirPatrimonio(PatrimonioInventariado ativo) async {
     if (ativo.idInventario == 0 || ativo.idSetor == 0) {
@@ -28,7 +50,12 @@ class PatrimonioInventariadoService {
     );
 
     if (patrimoniosExistentes.isNotEmpty) {
-      throw const DuplicatePatrimonioException();
+      //vai ser passado o objeto existente junto com a excecao
+      throw DuplicatePatrimonioException(
+        patrimonioDuplicado: PatrimonioInventariado.fromMap(
+          patrimoniosExistentes.first,
+        ),
+      );
     }
 
     return await db.insert('PatrimonioInventariado', ativo.toMap());
