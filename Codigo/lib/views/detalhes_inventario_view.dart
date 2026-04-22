@@ -72,41 +72,6 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
     });
   }
 
-  Future<void> _exportarPlanilha() async {
-    setState(() => _processando = true);
-    try {
-      final service = ExportarPlanilhaService();
-
-      String nomeSanitizado = widget.inventario.nome.replaceAll(' ', '_');
-      String nomeArquivo = "Relatorio_$nomeSanitizado";
-
-      final caminho = await service.gerarRelatorioPorInventario(
-          widget.inventario.id!, nomeArquivo);
-
-      final box = context.findRenderObject() as RenderBox?;
-      final posicao =
-          box != null ? box.localToGlobal(Offset.zero) & box.size : null;
-
-      await Share.shareXFiles(
-        [XFile(caminho)],
-        text: 'Segue a planilha do inventário: ${widget.inventario.nome}',
-        sharePositionOrigin: posicao,
-      );
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Planilha "$nomeArquivo" exportada com sucesso!')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao exportar: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _processando = false);
-    }
-  }
 
   String _formatarData(String data) {
     final partes = data.split('-');
@@ -231,44 +196,13 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                         .toList(),
                                     onChanged: _onSetorChanged,
                                   ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: (_processando ||
-                                      _setorSelecionadoId == null)
-                                  ? null
-                                  : _exportarPlanilha,
-                              icon: _processando
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.upload_file,
-                                      size: 22, color: Colors.white),
-                              label: Text(
-                                "Exportar Inventário",
-                                style: GoogleFonts.inter(
-                                    fontSize: 18, color: Colors.white),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0055FF),
-                                minimumSize: const Size(double.infinity, 50),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                disabledBackgroundColor: Colors.grey,
-                              ),
-                            ),
                             const SizedBox(height: 20),
                             Text(
                               'Patrimônios do setor',
                               style: GoogleFonts.interTight(
-                                  fontSize: 18, fontWeight: FontWeight.w600),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 10),
                             Expanded(child: _buildPatrimonioList()),

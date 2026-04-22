@@ -370,7 +370,7 @@ class _HomeViewState extends State<HomeView> {
                     )
                   : const Icon(
                       Icons.upload_file,
-                      color: Colors.green,
+                      color: Color(0xFF0055FF),
                     ),
             ),
             IconButton(
@@ -385,7 +385,7 @@ class _HomeViewState extends State<HomeView> {
                     )
                   : const Icon(
                       Icons.download,
-                      color: Colors.orange,
+                      color: Color(0xFF0055FF),
                     ),
             ),
           ],
