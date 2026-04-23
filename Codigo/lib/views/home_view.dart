@@ -321,7 +321,7 @@ class _HomeViewState extends State<HomeView> {
               );
             },
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -338,10 +338,10 @@ class _HomeViewState extends State<HomeView> {
           children: [
             const Icon(
               Icons.edit_calendar_rounded,
-              size: 34,
+              size: 44,
               color: Color(0xFF0055FF),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,15 +349,22 @@ class _HomeViewState extends State<HomeView> {
                   Text(
                     inventario.nome,
                     style: GoogleFonts.interTight(
-                      fontSize: 16,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 6),
                   Text(
-                    'Início: ${_formatarData(inventario.dataInicio)} | '
+                    'Início: ${_formatarData(inventario.dataInicio)}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  Text(
                     'Fim: ${_formatarData(inventario.dataFim)}',
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 15,
                       color: Colors.grey,
                     ),
                   ),
@@ -371,16 +378,18 @@ class _HomeViewState extends State<HomeView> {
                     isExportando ? null : () => _exportarInventario(inventario),
                 icon: isExportando
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
+                        width: 28,
+                        height: 28,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(
                         Icons.upload_file,
                         color: Color(0xFF0055FF),
+                        size: 32,
                       ),
               ),
             ),
+            const SizedBox(width: 15),
             AbsorbPointer(
               absorbing: isImportando,
               child: IconButton(
@@ -388,13 +397,14 @@ class _HomeViewState extends State<HomeView> {
                     isImportando ? null : () => _importarInventario(inventario),
                 icon: isImportando
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
+                        width: 28,
+                        height: 28,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(
                         Icons.download,
                         color: Color(0xFF0055FF),
+                        size: 32,
                       ),
               ),
             ),

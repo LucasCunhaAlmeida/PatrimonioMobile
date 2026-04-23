@@ -6,9 +6,7 @@ import 'package:patrimonio_mobile/models/setor_model.dart';
 import 'package:patrimonio_mobile/services/patrimonioInventariado_service.dart';
 import 'package:patrimonio_mobile/services/setor_service.dart';
 import 'package:patrimonio_mobile/views/scanner_view.dart';
-import 'package:patrimonio_mobile/services/exportar_planilha_service.dart';
 import '/widgets/custom_navbar.dart';
-import 'package:share_plus/share_plus.dart';
 
 class DetalhesInventarioView extends StatefulWidget {
   final Inventario inventario;
@@ -21,7 +19,6 @@ class DetalhesInventarioView extends StatefulWidget {
 class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
   final _setorService = SetorService();
   final _patrimonioService = PatrimonioInventariadoService();
-  bool _processando = false;
 
   List<Setor> _setores = [];
   List<PatrimonioInventariado> _patrimonios = [];
@@ -297,10 +294,10 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
 
   Widget _buildPatrimonioItem(PatrimonioInventariado p) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             blurRadius: 3,
@@ -320,13 +317,14 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                 Text(
                   p.numero,
                   style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   'Estado: ${p.estadoPatrimonio} | Conservação: ${p.estadoConservacao}',
-                  style: GoogleFonts.inter(fontSize: 11.5, color: Colors.grey),
+                  style: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
                 ),
               ],
             ),
@@ -336,12 +334,12 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
             children: [
               IconButton(
                 icon:
-                    const Icon(Icons.edit, color: Color(0xFF0055FF), size: 24),
+                    const Icon(Icons.edit, color: Color(0xFF0055FF), size:28),
                 onPressed: () => _mostrarDialogoEditar(p),
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline,
-                    color: Colors.red, size: 24),
+                    color: Colors.red, size: 28),
                 onPressed: () => _mostrarDialogoDeletar(p),
               ),
             ],
@@ -444,6 +442,7 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
   }
 
   Future<void> _mostrarDialogoEditar(PatrimonioInventariado p) async {
+    final rootContext = context;
     final controller = TextEditingController(text: p.numero);
     final estadoPatrimonioNotifier = ValueNotifier<String?>(p.estadoPatrimonio);
     final estadoConservacaoNotifier =
@@ -453,8 +452,8 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setStateDialog) {
+      builder: (dialogContext) {
+        return StatefulBuilder(builder: (_, setStateDialog) {
           return Dialog(
             insetPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
@@ -552,6 +551,30 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                       Row(
                         children: [
                           Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.black87,
+                                side: BorderSide(color: Colors.grey.shade400),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => Navigator.of(dialogContext).pop(),
+                              child: const Text(
+                                'Cancelar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,
@@ -588,10 +611,10 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                             .atualizarPatrimonio(p);
 
                                         if (mounted) {
-                                          Navigator.pop(context);
+                                          Navigator.of(dialogContext).pop();
                                           _loadPatrimonios(
                                               _setorSelecionadoId!);
-                                          ScaffoldMessenger.of(context)
+                                          ScaffoldMessenger.of(rootContext)
                                               .showSnackBar(
                                             const SnackBar(
                                               content: Text(
@@ -601,7 +624,8 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                         }
                                       } catch (e) {
                                         setStateDialog(() => isLoading = false);
-                                        ScaffoldMessenger.of(context)
+                                        if (!mounted) return;
+                                        ScaffoldMessenger.of(rootContext)
                                             .showSnackBar(
                                           SnackBar(
                                             content:
@@ -612,30 +636,6 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                     },
                               child: const Text(
                                 'Salvar',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.black87,
-                                side: BorderSide(color: Colors.grey.shade400),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              onPressed: isLoading
-                                  ? null
-                                  : () => Navigator.pop(context),
-                              child: const Text(
-                                'Cancelar',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -657,13 +657,14 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
   }
 
   Future<void> _mostrarDialogoDeletar(PatrimonioInventariado p) async {
+    final rootContext = context;
     bool isLoading = false;
 
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setStateDialog) {
+      builder: (dialogContext) {
+        return StatefulBuilder(builder: (_, setStateDialog) {
           return Dialog(
             insetPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
@@ -714,6 +715,29 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                     Row(
                       children: [
                         Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.black87,
+                              side: BorderSide(color: Colors.grey.shade400),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: isLoading
+                                ? null
+                                : () => Navigator.of(dialogContext).pop(),
+                            child: const Text(
+                              'Cancelar',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
@@ -733,9 +757,9 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                           .excluirPatrimonio(p.id!);
 
                                       if (mounted) {
-                                        Navigator.pop(context);
+                                        Navigator.of(dialogContext).pop();
                                         _loadPatrimonios(_setorSelecionadoId!);
-                                        ScaffoldMessenger.of(context)
+                                        ScaffoldMessenger.of(rootContext)
                                             .showSnackBar(
                                           const SnackBar(
                                             content:
@@ -745,7 +769,8 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                       }
                                     } catch (e) {
                                       setStateDialog(() => isLoading = false);
-                                      ScaffoldMessenger.of(context)
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(rootContext)
                                           .showSnackBar(
                                         SnackBar(
                                             content:
@@ -755,28 +780,6 @@ class _DetalhesInventarioViewState extends State<DetalhesInventarioView> {
                                   },
                             child: const Text(
                               'Excluir',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.black87,
-                              side: BorderSide(color: Colors.grey.shade400),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onPressed:
-                                isLoading ? null : () => Navigator.pop(context),
-                            child: const Text(
-                              'Cancelar',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

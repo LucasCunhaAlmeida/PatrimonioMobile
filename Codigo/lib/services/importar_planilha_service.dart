@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:excel/excel.dart';
-import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
 import 'package:patrimonio_mobile/models/patrimonioInventariado_model.dart';
 import 'package:patrimonio_mobile/services/patrimonioInventariado_service.dart';

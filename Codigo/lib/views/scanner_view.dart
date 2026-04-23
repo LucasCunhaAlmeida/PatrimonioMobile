@@ -42,6 +42,7 @@ class _ScannerViewState extends State<ScannerView> {
     String? estadoInicialPatrimonio,
     String? estadoInicialConservacao,
   }) async {
+    final rootContext = context;
     final exibeSeletoresEstado = onSalvarEstados != null;
 
     final estadoPatrimonioNotifier =
@@ -52,7 +53,7 @@ class _ScannerViewState extends State<ScannerView> {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Padding(
@@ -131,12 +132,35 @@ class _ScannerViewState extends State<ScannerView> {
                   child: ValueListenableBuilder2(
                     first: estadoPatrimonioNotifier,
                     second: estadoConservacaoNotifier,
-                    builder: (context, estadoPatrimonio, estadoConservacao, _) {
+                    builder: (_, estadoPatrimonio, estadoConservacao, child) {
                       final podeSalvar =
                           estadoPatrimonio != null && estadoConservacao != null;
 
                       return Row(
                         children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.black87,
+                                side: BorderSide(color: Colors.grey.shade400),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(),
+                              child: Text(
+                                textoBotaoCancelar,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -154,12 +178,12 @@ class _ScannerViewState extends State<ScannerView> {
                                           estadoPatrimonio,
                                           estadoConservacao,
                                         );
-                                        if (context.mounted) {
-                                          Navigator.pop(context);
+                                        if (mounted) {
+                                          Navigator.of(dialogContext).pop();
                                         }
                                       } catch (e) {
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context)
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(rootContext)
                                               .showSnackBar(
                                             SnackBar(
                                               content:
@@ -175,28 +199,6 @@ class _ScannerViewState extends State<ScannerView> {
                                 podeSalvar ? textoBotaoSalvar : "Salvar",
                                 style: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.black87,
-                                side: BorderSide(color: Colors.grey.shade400),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              onPressed: () => Navigator.pop(context),
-                              child: Text(
-                                textoBotaoCancelar,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
                               ),
                             ),
                           ),
@@ -217,7 +219,7 @@ class _ScannerViewState extends State<ScannerView> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.of(dialogContext).pop(),
                     child: const Text(
                       "OK",
                       style:
@@ -449,7 +451,7 @@ class _ScannerViewState extends State<ScannerView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -517,6 +519,27 @@ class _ScannerViewState extends State<ScannerView> {
               Row(
                 children: [
                   Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.black87,
+                        side: BorderSide(color: Colors.grey.shade400),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text(
+                        "Cancelar",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -529,32 +552,11 @@ class _ScannerViewState extends State<ScannerView> {
                       onPressed: () {
                         final txt = _manualController.text.trim();
                         if (txt.isEmpty) return;
-                        Navigator.pop(context);
+                        Navigator.of(dialogContext).pop();
                         _salvarNoBanco(txt);
                       },
                       child: const Text(
                         "Salvar",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.black87,
-                        side: BorderSide(color: Colors.grey.shade400),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        "Cancelar",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

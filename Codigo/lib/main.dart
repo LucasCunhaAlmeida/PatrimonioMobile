@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:patrimonio_mobile/views/home_view.dart';
 import 'package:patrimonio_mobile/views/splash_view.dart';
 
 void main() {
