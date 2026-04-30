@@ -35,6 +35,7 @@ class _SetorViewState extends State<SetorView> {
     final instituicoes = await _instituicaoService.queryAllInstituicoes();
     final setores = await _setorService.queryAllSetores();
 
+    if (!mounted) return;
     setState(() {
       _instituicoes = instituicoes;
       _setores = setores;
