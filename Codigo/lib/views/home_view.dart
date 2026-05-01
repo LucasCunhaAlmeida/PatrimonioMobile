@@ -80,6 +80,9 @@ class _HomeViewState extends State<HomeView> {
 
   Future<void> _importarInventario(Inventario inventario) async {
     try {
+      // Validação de segurança
+      if (_instituicaoSelecionadaId == null || inventario.id == null) return;
+
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx'],
@@ -88,36 +91,27 @@ class _HomeViewState extends State<HomeView> {
       if (result != null && result.files.single.path != null) {
         setState(() => _importandoInventarioId = inventario.id);
 
+        // PASSA OS IDS DA TELA PARA O SERVIÇO
         await _importarService.importarPlanilha(
           result.files.single.path!,
+          _instituicaoSelecionadaId!, // ID da Instituição selecionada no Dropdown
+          inventario.id!,             // ID do Inventário do card clicado
         );
 
         await _onInstituicaoChanged(_instituicaoSelecionadaId);
 
         if (!mounted) return;
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Importação concluída em ${inventario.nome}',
-            ),
+            content: Text('Importação concluída em ${inventario.nome}'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao importar: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // ... resto do seu catch original ...
     } finally {
-      if (mounted) {
-        setState(() => _importandoInventarioId = null);
-      }
+      if (mounted) setState(() => _importandoInventarioId = null);
     }
   }
 
