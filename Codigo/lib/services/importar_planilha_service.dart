@@ -8,7 +8,7 @@ class ImportarPlanilhaService {
   final dbHelper = DatabaseHelper.instance;
   final _patrimonioService = PatrimonioInventariadoService();
 
-  Future<int> importarPlanilha(String caminhoArquivo) async {
+  Future<int> importarPlanilha(String caminhoArquivo, int idInstituicao, int idInventario) async {
     var bytes = File(caminhoArquivo).readAsBytesSync();
     var excel = Excel.decodeBytes(bytes);
     int totalProcessados = 0;
@@ -19,43 +19,32 @@ class ImportarPlanilhaService {
 
       for (int i = 1; i < sheet.maxRows; i++) {
         var row = sheet.rows[i];
-        // Verifica se a linha está vazia ou se a primeira célula essencial é nula
         if (row.isEmpty || row.length < 6) continue;
 
         try {
-          final nomeInstituicao = row[0]?.value?.toString().trim();
           final nomeSetor = row[1]?.value?.toString().trim();
-          final nomeInventario = row[2]?.value?.toString().trim();
-          final dataInicio = row[3]?.value?.toString().trim();
-          final dataFim = row[4]?.value?.toString().trim();
-
           final numeroPatrimonioRaw = row[5]?.value?.toString().trim();
+          final estadoPatrimonioRaw = row.length > 6 ? row[6]?.value?.toString().trim() : null;
+          final estadoConservacaoRaw = row.length > 7 ? row[7]?.value?.toString().trim() : null;
+
+          String estadoPatrimonio = (estadoPatrimonioRaw != null && estadoPatrimonioRaw.isNotEmpty) 
+              ? estadoPatrimonioRaw : 'Em uso';
+          String estadoConservacao = (estadoConservacaoRaw != null && estadoConservacaoRaw.isNotEmpty) 
+              ? estadoConservacaoRaw : 'Bom';
 
           String? numeroPatrimonio;
           if (numeroPatrimonioRaw != null) {
-            if (numeroPatrimonioRaw.endsWith('.0')) {
-              numeroPatrimonio = numeroPatrimonioRaw.substring(
-                  0, numeroPatrimonioRaw.length - 2);
-            } else {
-              numeroPatrimonio = numeroPatrimonioRaw;
-            }
+            numeroPatrimonio = numeroPatrimonioRaw.endsWith('.0') 
+                ? numeroPatrimonioRaw.substring(0, numeroPatrimonioRaw.length - 2) 
+                : numeroPatrimonioRaw;
           }
 
-          if (nomeInstituicao == null ||
-              numeroPatrimonio == null ||
-              numeroPatrimonio.isEmpty) {
-            continue;
-          }
+          if (numeroPatrimonio == null || numeroPatrimonio.isEmpty) continue;
 
-          int idInst = await _obterOuCriarInstituicao(nomeInstituicao);
+          int idSetor = await _obterOuCriarSetor(nomeSetor ?? "Setor Geral", idInstituicao);
 
-          int idSetor =
-              await _obterOuCriarSetor(nomeSetor ?? "Setor Geral", idInst);
-
-          int idInv = await _obterOuCriarInventario(
-              nomeInventario ?? "Novo Inventário", idInst, dataInicio, dataFim);
-
-          await _upsertPatrimonio(numeroPatrimonio, idInv, idSetor);
+          await _upsertPatrimonio(
+              numeroPatrimonio, idInventario, idSetor, estadoPatrimonio, estadoConservacao);
 
           totalProcessados++;
         } catch (e) {
@@ -68,8 +57,7 @@ class ImportarPlanilhaService {
 
   Future<int> _obterOuCriarInstituicao(String nome) async {
     final db = await dbHelper.database;
-    var res =
-        await db.query('Instituicao', where: 'nome = ?', whereArgs: [nome]);
+    var res = await db.query('Instituicao', where: 'nome = ?', whereArgs: [nome]);
 
     if (res.isNotEmpty) {
       return res.first['id'] as int;
@@ -108,7 +96,9 @@ class ImportarPlanilhaService {
     }
   }
 
-  Future<void> _upsertPatrimonio(String numero, int idInv, int idSetor) async {
+  // Assinatura atualizada para receber os dois novos campos
+  Future<void> _upsertPatrimonio(
+      String numero, int idInv, int idSetor, String estadoPatrimonio, String estadoConservacao) async {
     final db = await dbHelper.database;
 
     var res = await db.query('PatrimonioInventariado',
@@ -119,12 +109,14 @@ class ImportarPlanilhaService {
         numero: numero,
         idInventario: idInv,
         idSetor: idSetor,
-        estadoPatrimonio: 'Em uso',
-        estadoConservacao: 'Bom',
+        estadoPatrimonio: estadoPatrimonio, // Campo novo
+        estadoConservacao: estadoConservacao, // Campo novo
       ));
     } else {
       var pExistente = PatrimonioInventariado.fromMap(res.first);
       pExistente.idSetor = idSetor;
+      pExistente.estadoPatrimonio = estadoPatrimonio; // Atualiza se existir
+      pExistente.estadoConservacao = estadoConservacao; // Atualiza se existir
 
       await _patrimonioService.atualizarPatrimonio(pExistente);
     }
